@@ -1,19 +1,145 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/anak.dart';
+import '../models/ortu.dart';
+import '../models/kecamatan.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  final String baseUrl = 'http://127.0.0.1:8000/api'; // Ganti dengan URL API Anda
+  final String baseUrl = 'http://127.0.0.1:8000/api';
 
-  Future<void> tambahDataAnak(Anak anak) async {
+  // tampil data anak
+ Future<List<Map<String, dynamic>>> fetchAnak(int idOrtu) async {
+  final url = Uri.parse('$baseUrl/anak');
+
+  final response = await http.get(url);
+  if (response.statusCode == 200) {
+    final List data = json.decode(response.body);
+
+    return data
+        .where((anak) =>
+            anak['id_orangtua'] == idOrtu &&
+            anak['status'] == 'diterima') // Tambahkan filter status
+        .cast<Map<String, dynamic>>()
+        .toList();
+  } else {
+    throw Exception('Gagal mengambil data anak');
+  }
+}
+
+
+  // Tambah data anak
+ Future<void> tambahDataAnak(Anak anak) async {
+  final prefs = await SharedPreferences.getInstance();
+  final idOrtu = prefs.getInt('id_orangtua');
+
+  if (idOrtu == null) {
+    throw Exception('ID orang tua tidak ditemukan. Harus login dulu.');
+  }
+
+  final data = anak.toJson();
+  data['id_orangtua'] = idOrtu; // override id_orangtua
+
+  final response = await http.post(
+    Uri.parse('$baseUrl/anak'),
+    headers: {'Content-Type': 'application/json'},
+    body: json.encode(data),
+  );
+
+  if (response.statusCode != 200 && response.statusCode != 201) {
+    throw Exception('Gagal menambahkan data anak');
+  }
+}
+
+
+
+  // Login orang tua
+  Future<Map<String, dynamic>> login(String email, String password) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/login'),
+    headers: {'Content-Type': 'application/json'},
+    body: json.encode({
+      'email': email,
+      'password': password,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    final data = json.decode(response.body);
+    Ortu ortu = Ortu.fromJson(data['user']);
+    String token = data['token'];
+
+    // Simpan token & id_orangtua ke SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+    await prefs.setInt('id_orangtua', ortu.id);
+
+    return {
+      'success': true,
+      'ortu': ortu,
+      'token': token,
+    };
+  } else {
+    return {
+      'success': false,
+      'message': 'Login gagal, status code: ${response.statusCode}',
+    };
+  }
+}
+
+
+  // kecamatan
+  // ApiService.dart
+
+Future<List<Kecamatan>> fetchKecamatan() async {
+  final response = await http.get(Uri.parse('$baseUrl/kecamatan'));
+
+  if (response.statusCode == 200) {
+    final responseData = json.decode(response.body);
+    if (responseData['status'] == true) {
+      return (responseData['data'] as List)
+          .map((item) => Kecamatan.fromJson(item))
+          .toList();
+    } else {
+      throw Exception('API mengembalikan status false');
+    }
+  } else {
+    throw Exception('Gagal memuat kecamatan');
+  }
+}
+
+  // Register orang tua
+  Future<Ortu?> register({
+  required String nama,
+  required String email,
+  required String password,
+  required int idKecamatan,
+  required String alamat,
+}) async {
+  final url = Uri.parse('$baseUrl/register');
+
+  try {
     final response = await http.post(
-      Uri.parse('$baseUrl/anak'),
+      url,
       headers: {'Content-Type': 'application/json'},
-      body: json.encode(anak.toJson()),
+      body: jsonEncode({
+        'nama': nama,
+        'email': email,
+        'password': password,
+        'id_kecamatan': idKecamatan,
+        'alamat': alamat,
+      }),
     );
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Gagal menambahkan data anak');
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['status'] == true) {
+      return Ortu.fromJson(data['data']);
+    } else {
+      throw Exception(data['message'] ?? 'Gagal daftar');
     }
+  } catch (e) {
+    throw Exception('Terjadi kesalahan saat mendaftar: $e');
   }
+}
 }

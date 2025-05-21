@@ -1,8 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:stuntfree/widgets/bottom_navbar.dart';
+import '../service/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class DataAnakPage extends StatelessWidget {
+class DataAnakPage extends StatefulWidget {
   const DataAnakPage({super.key});
+
+  @override
+  State<DataAnakPage> createState() => _DataAnakPageState();
+}
+
+class _DataAnakPageState extends State<DataAnakPage> {
+  late Future<List<Map<String, dynamic>>> _anakFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _anakFuture = _fetchAnakDiterima();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchAnakDiterima() async {
+    final prefs = await SharedPreferences.getInstance();
+    final idOrtu = prefs.getInt('id_orangtua');
+    if (idOrtu == null) return [];
+    final data = await ApiService().fetchAnak(idOrtu);
+    // Filter yang statusnya 'diterima' sudah di API, tapi tetap jaga aman
+    return data.where((anak) => anak['status'].toString().toLowerCase() == 'diterima').toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,44 +61,58 @@ class DataAnakPage extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              const SizedBox(height: 8),
-              // Search bar
-              const TextField(
-                decoration: InputDecoration(
-                  hintText: 'Cari nama anak...',
-                  prefixIcon: Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: EdgeInsets.symmetric(vertical: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(30)),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildChildCard(context, false),
-              const SizedBox(height: 16),
-              _buildChildCard(context, true),
-              const SizedBox(height: 100),
-            ],
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _anakFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('Belum ada data anak yang diterima'));
+              } else {
+                final anakList = snapshot.data!;
+                return ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    const SizedBox(height: 8),
+                    // Search bar (belum aktif fungsi pencarian)
+                    const TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Cari nama anak...',
+                        prefixIcon: Icon(Icons.search),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: EdgeInsets.symmetric(vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(30)),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ...anakList.map((anak) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildChildCard(context, anak),
+                    )),
+                    const SizedBox(height: 100),
+                  ],
+                );
+              }
+            },
           ),
-          // Tombol Tambah Data
           Positioned(
             bottom: 80,
             right: 20,
             child: FloatingActionButton.extended(
               onPressed: () {
-              Navigator.pushNamed(context, '/tambah');
+                Navigator.pushNamed(context, '/tambah');
               },
               backgroundColor: const Color(0xFF5D78FD),
               icon: const Icon(Icons.add, color: Colors.white),
               label: const Text(
-              'Tambah',
-              style: TextStyle(color: Colors.white),
+                'Tambah',
+                style: TextStyle(color: Colors.white),
               ),
             ),
           ),
@@ -91,7 +129,14 @@ class DataAnakPage extends StatelessWidget {
     );
   }
 
-  Widget _buildChildCard(BuildContext context, bool hasPrediction) {
+  Widget _buildChildCard(BuildContext context, Map<String, dynamic> anak) {
+    int jenisKelaminValue = anak['jenis_kelamin'] ?? -1;
+    bool isLakiLaki = jenisKelaminValue == 1;
+
+    // Contoh asumsi field z_score di API sebagai tanda ada prediksi
+    bool hasPrediction = anak['z_score'] != null;
+    String zScore = anak['z_score']?.toString() ?? '-';
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -108,73 +153,92 @@ class DataAnakPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Fahzila Raul Ardiansa',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          Text(
+            anak['nama'] ?? '-',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
-          const Text('NIK: 350927002233446611', style: TextStyle(color: Colors.black54)),
+          Text('NIK: ${anak['nik'] ?? '-'}', style: const TextStyle(color: Colors.black54)),
           const SizedBox(height: 12),
           Row(
-            children: const [
-              Icon(Icons.male, size: 16, color: Color(0xFF5D78FD)),
-              SizedBox(width: 4),
-              Text('Laki-laki'),
-              SizedBox(width: 16),
-              Icon(Icons.cake, size: 16, color: Color(0xFF5D78FD)),
-              SizedBox(width: 4),
-              Text('20 tahun'),
+            children: [
+              Icon(
+                isLakiLaki ? Icons.male : Icons.female,
+                size: 16,
+                color: const Color(0xFF5D78FD),
+              ),
+              const SizedBox(width: 4),
+              Text(isLakiLaki ? 'Laki-laki' : 'Perempuan'),
+              const SizedBox(width: 16),
+              const Icon(Icons.cake, size: 16, color: Color(0xFF5D78FD)),
+              const SizedBox(width: 4),
+              Text(_calculateAge(anak['tanggal_lahir'] ?? '2000-01-01')),
             ],
           ),
-          
-          const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (hasPrediction) ...[
-                        Row(
-                          children: const [
-                            Icon(Icons.warning_amber, size: 16, color: Colors.redAccent),
-                            SizedBox(width: 4),
-                            Text('Stunting', style: TextStyle(color: Colors.redAccent)),
-                          ],
-                        ),
-                        SizedBox(height: 4),
-                        Row(
-                          children: const [
-                            Icon(Icons.analytics, size: 16, color: Colors.deepPurple),
-                            SizedBox(width: 4),
-                            Text('Z-Score: -2.1'),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                TextButton.icon(
-                    onPressed: () {
-                    if (!hasPrediction) {
-                      Navigator.pushNamed(context, '/prediksi');
-                    }
-                    },
-                  style: TextButton.styleFrom(
-                    backgroundColor: const Color(0xFF5D78FD),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                    icon: Icon(hasPrediction ? Icons.edit : Icons.calculate, color: Colors.white),
-                  label: Text(hasPrediction ? 'Edit' : 'Prediksi'),
-                ),
-              ],
-            ),
 
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (hasPrediction) ...[
+                      Row(
+                        children: const [
+                          Icon(Icons.warning_amber, size: 16, color: Colors.redAccent),
+                          SizedBox(width: 4),
+                          Text('Stunting', style: TextStyle(color: Colors.redAccent)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.analytics, size: 16, color: Colors.deepPurple),
+                          const SizedBox(width: 4),
+                          Text('Z-Score: $zScore'),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () {
+                  if (!hasPrediction) {
+                    Navigator.pushNamed(context, '/prediksi');
+                  } else {
+                    Navigator.pushNamed(context, '/edit_prediksi');
+                  }
+                },
+                style: TextButton.styleFrom(
+                  backgroundColor: const Color(0xFF5D78FD),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: Icon(hasPrediction ? Icons.edit : Icons.calculate, color: Colors.white),
+                label: Text(hasPrediction ? 'Edit' : 'Prediksi'),
+              ),
+            ],
+          ),
         ],
       ),
     );
+  }
+
+  String _calculateAge(String tanggalLahir) {
+    try {
+      final birthDate = DateTime.parse(tanggalLahir);
+      final now = DateTime.now();
+      int age = now.year - birthDate.year;
+      if (now.month < birthDate.month || (now.month == birthDate.month && now.day < birthDate.day)) {
+        age--;
+      }
+      return '$age tahun';
+    } catch (e) {
+      return '- tahun';
+    }
   }
 }

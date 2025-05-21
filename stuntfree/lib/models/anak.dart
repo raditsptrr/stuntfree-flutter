@@ -1,18 +1,20 @@
 class Anak {
-  final int id;
+  final int? id;
   final String nik;
   final String nama;
   final String jenisKelamin;
   final String tanggalLahir;
-  final int idOrangtua;
+  final int? idOrangtua;
+  final String? status;  // tambah status
 
   Anak({
-    required this.id,
+    this.id,
     required this.nik,
     required this.nama,
     required this.jenisKelamin,
     required this.tanggalLahir,
-    required this.idOrangtua,
+    this.idOrangtua,
+    this.status,
   });
 
   factory Anak.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class Anak {
       jenisKelamin: json['jenis_kelamin'],
       tanggalLahir: json['tanggal_lahir'],
       idOrangtua: json['id_orangtua'],
+      status: json['status'],
     );
   }
 
@@ -32,7 +35,8 @@ class Anak {
       'nama': nama,
       'jenis_kelamin': jenisKelamin,
       'tanggal_lahir': tanggalLahir,
-      'id_orangtua': idOrangtua,
+      'status': status ?? 'proses',  // default status
+      // 'id_orangtua' jangan di sini, biar api_service yang set otomatis
     };
   }
 }

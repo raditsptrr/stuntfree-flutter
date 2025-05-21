@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class TambahDataAnakPage extends StatefulWidget {
@@ -12,11 +13,29 @@ class TambahDataAnakPage extends StatefulWidget {
 class _TambahDataAnakPageState extends State<TambahDataAnakPage> {
   final _namaController = TextEditingController();
   final _nikController = TextEditingController();
-  final _jkController = TextEditingController();
   final _tanggalLahirController = TextEditingController();
 
+  int? _jenisKelaminValue;
+
   Future<void> _kirimData() async {
-    final url = Uri.parse('http://127.0.0.1:8000/api/anak'); // Ganti jika pakai emulator Android
+    final prefs = await SharedPreferences.getInstance();
+    final idOrtu = prefs.getInt('id_orangtua');
+
+    if (idOrtu == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Anda belum login, silakan login dulu')),
+      );
+      return;
+    }
+
+    if (_jenisKelaminValue == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Silakan pilih jenis kelamin')),
+      );
+      return;
+    }
+
+    final url = Uri.parse('http://127.0.0.1:8000/api/anak');
 
     final response = await http.post(
       url,
@@ -24,21 +43,37 @@ class _TambahDataAnakPageState extends State<TambahDataAnakPage> {
       body: json.encode({
         'nama': _namaController.text,
         'nik': _nikController.text,
-        'jenis_kelamin': _jkController.text,
+        'jenis_kelamin': _jenisKelaminValue.toString(),
         'tanggal_lahir': _tanggalLahirController.text,
-        'id_orangtua': 1 // Sementara, sesuaikan dengan user login
+        'id_orangtua': idOrtu,
+        'status': 'proses',  // otomatis status "proses"
       }),
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Data berhasil dikirim!')),
+        const SnackBar(content: Text('Data berhasil dikirim!')),
       );
       Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal kirim data.')),
+        const SnackBar(content: Text('Gagal kirim data.')),
       );
+    }
+  }
+
+  Future<void> _selectTanggalLahir() async {
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+
+    if (pickedDate != null) {
+      setState(() {
+        _tanggalLahirController.text = pickedDate.toIso8601String().split('T')[0];
+      });
     }
   }
 
@@ -89,11 +124,34 @@ class _TambahDataAnakPageState extends State<TambahDataAnakPage> {
 
                 const SizedBox(height: 12),
                 _buildLabel('Jenis Kelamin'),
-                _buildTextField(controller: _jkController),
+                DropdownButtonFormField<int>(
+                  value: _jenisKelaminValue,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: const Color(0xFFF2F2F2),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 0, child: Text('Perempuan')),
+                    DropdownMenuItem(value: 1, child: Text('Laki-laki')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _jenisKelaminValue = value;
+                    });
+                  },
+                ),
 
                 const SizedBox(height: 12),
                 _buildLabel('Tanggal Lahir (YYYY-MM-DD)'),
-                _buildTextField(controller: _tanggalLahirController),
+                _buildTextField(
+                  controller: _tanggalLahirController,
+                  onTap: _selectTanggalLahir,
+                ),
 
                 const SizedBox(height: 24),
                 Row(
@@ -115,7 +173,7 @@ class _TambahDataAnakPageState extends State<TambahDataAnakPage> {
                       child: ElevatedButton(
                         onPressed: _kirimData,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF5D78FD),
+                          backgroundColor: const Color(0xFF5D78FD),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -133,9 +191,11 @@ class _TambahDataAnakPageState extends State<TambahDataAnakPage> {
     );
   }
 
-  Widget _buildTextField({required TextEditingController controller}) {
+  Widget _buildTextField({required TextEditingController controller, VoidCallback? onTap}) {
     return TextField(
       controller: controller,
+      readOnly: onTap != null,
+      onTap: onTap,
       decoration: InputDecoration(
         filled: true,
         fillColor: const Color(0xFFF2F2F2),
