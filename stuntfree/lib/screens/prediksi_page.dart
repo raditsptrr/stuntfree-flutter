@@ -20,25 +20,13 @@ class PrediksiPage extends StatelessWidget {
             letterSpacing: 1,
           ),
         ),
-        leading: const Padding(
-          padding: EdgeInsets.only(left: 12),
-          child: CircleAvatar(
-            backgroundColor: Color(0xFFE3F0FF),
-            child: Icon(Icons.person, color: Color(0xFF5D78FD)),
-          ),
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.menu, color: Color(0xFF5D78FD)),
-          ),
-        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Center(
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
           child: Container(
             width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 500),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -54,31 +42,37 @@ class PrediksiPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildFieldLabel('Nama'),
-                _buildTextField(),
-                const SizedBox(height: 12),
+                const Text(
+                  'Silahkan masukan data untuk prediksi',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF5D78FD),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Masukan umur, tinggi badan, dan berat badan agar mengetahui pertumbuhan pada balita dengan z-score sesuai standar WHO.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 24),
 
-                _buildFieldLabel('NIK'),
-                _buildTextField(),
-                const SizedBox(height: 12),
+                _buildFieldLabel('Nama Anak'),
+                _buildDropdownNama(),
+                const SizedBox(height: 16),
 
-                _buildFieldLabel('Jenis Kelamin'),
+                _buildFieldLabel('Umur (bulan)'),
                 _buildTextField(),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-                _buildFieldLabel('Tanggal Lahir'),
+                _buildFieldLabel('Berat Badan (kg)'),
                 _buildTextField(),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-                _buildFieldLabel('Berat Badan'),
-                _buildTextField(),
-                const SizedBox(height: 12),
-
-                _buildFieldLabel('Tinggi Badan'),
-                _buildTextField(),
-                const SizedBox(height: 12),
-
-                _buildFieldLabel('Lingkar Lengan'),
+                _buildFieldLabel('Tinggi Badan (cm)'),
                 _buildTextField(),
                 const SizedBox(height: 24),
 
@@ -87,7 +81,7 @@ class PrediksiPage extends StatelessWidget {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.pop(context);
+                          _showCancelConfirmation(context);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.redAccent,
@@ -109,7 +103,7 @@ class PrediksiPage extends StatelessWidget {
                           // Logika Prediksi di sini
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF2A68B2),
+                          backgroundColor: Color(0xFF5D78FD),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -131,26 +125,85 @@ class PrediksiPage extends StatelessWidget {
     );
   }
 
+  void _showCancelConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konfirmasi'),
+        content: const Text('Apakah Anda yakin ingin membatalkan pengisian form?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tidak'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context); // tutup dialog
+              Navigator.pushReplacementNamed(context, '/dataanak'); // pindah ke /dataanak
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5D78FD),
+            ),
+            child: const Text(
+              'Ya',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFieldLabel(String text) {
     return Text(
       text,
       style: const TextStyle(
         fontWeight: FontWeight.w600,
-        color: Color(0xFF2A68B2),
+        color: Color(0xFF5D78FD),
       ),
     );
   }
 
   Widget _buildTextField() {
-    return TextField(
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: const Color(0xFFF2F2F2),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+    return SizedBox(
+      height: 50,
+      child: TextField(
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: const Color(0xFFF2F2F2),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+    );
+  }
+
+  Widget _buildDropdownNama() {
+    return SizedBox(
+      height: 50,
+      child: DropdownButtonFormField<String>(
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: const Color(0xFFF2F2F2),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        ),
+        hint: const Text('Pilih Nama Anak'),
+        items: ['Anak A', 'Anak B', 'Anak C'].map((name) {
+          return DropdownMenuItem(
+            value: name,
+            child: Text(name),
+          );
+        }).toList(),
+        onChanged: (value) {
+          // aksi ketika dropdown berubah
+        },
       ),
     );
   }

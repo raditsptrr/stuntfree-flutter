@@ -9,154 +9,227 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F7FD),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header dengan Icon
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    CircleAvatar(
-                      backgroundColor: Color(0xFFE3F0FF),
-                      child: Icon(Icons.person, color: Color(0xFF5D78FD)),
-                    ),
-                    Icon(Icons.menu, color: Color(0xFF5D78FD)),
-                  ],
-                ),
+      extendBody: true,
+      body: Stack(
+        children: [
+          // Background dan konten utama
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFF2F7FD), Color(0xFFEAF0FB)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-
-              // Search bar
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search',
-                    prefixIcon: Icon(Icons.search),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: EdgeInsets.symmetric(vertical: 0),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(30)),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Info Card
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 140,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.only(left: 16),
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const ChildDetailScreen()),
-                        );
-                      },
-                      child: const InfoCard(
-                        name: "Fahzil Raul",
-                        gender: "Laki-Laki",
-                        weight: 50,
-                        age: 20,
-                        height: 170,
-                        score: -2.3,
-                        color: Color(0xFF5D78FD),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const InfoCard(
-                      name: "Fahzil Raul",
-                      gender: "Laki-Laki",
-                      weight: 50,
-                      age: 20,
-                      height: 170,
-                      score: -2.3,
-                      color: Colors.amber,
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text("Teman Sehat Anak", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: const [
-                    Expanded(
-                      child: CategoryCard(title: 'Pediatrics', icon: Icons.child_care, color: Colors.red),
-                    ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: CategoryCard(title: 'Cardiology', icon: Icons.favorite, color: Color(0xFF5D78FD)),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text("Terbaru", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 80),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    NewsCard(
-                      title: "Victory College",
-                      date: "10 May 2025",
-                      description: "Studying how CBD awareness and availability as it related to pain management alternatives.",
-                      imagePath: 'assets/images/doctor.png',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => NewsDetailScreen(
-                              title: "Victory College",
-                              date: "10 May 2025", // tambahkan ini
-                              imagePath: 'assets/images/doctor.png',
-                              content: "Studying how CBD awareness and availability as it related to pain management alternatives. Full article here.",
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ShaderMask(
+                                  shaderCallback: (Rect bounds) {
+                                    return const LinearGradient(
+                                      colors: [Color(0xFF5D78FD), Color(0xFF448AFF)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ).createShader(bounds);
+                                  },
+                                  child: const Text(
+                                    "SELAMAT DATANG",
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                ShaderMask(
+                                  shaderCallback: (Rect bounds) {
+                                    return const LinearGradient(
+                                      colors: [Color(0xFF5D78FD), Color(0xFF448AFF)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ).createShader(bounds);
+                                  },
+                                  child: const Text(
+                                    "FAHZIL RAUL",
+                                    style: TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        );
-                      },
+                          const SizedBox(width: 16),
+                          Image.asset(
+                            'assets/images/jerapah.png',
+                            height: 120,
+                          ),
+                        ],
+                      ),
                     ),
+
+                    // Search Bar
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search',
+                          prefixIcon: Icon(Icons.search),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: EdgeInsets.symmetric(vertical: 0),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(30)),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Info Card List
+                    SizedBox(
+                      height: 140,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.only(left: 16),
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ChildDetailScreen()),
+                              );
+                            },
+                            child: const InfoCard(
+                              name: "Fahzil Raul",
+                              gender: "Laki-Laki",
+                              weight: 50,
+                              age: 20,
+                              height: 170,
+                              score: -2.3,
+                              color: Color(0xFF5D78FD),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text("Teman Sehat Anak",
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: const [
+                          Expanded(
+                            child: CategoryCard(
+                              title: 'Pediatrics',
+                              icon: Icons.child_care,
+                              color: Colors.red,
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: CategoryCard(
+                              title: 'Cardiology',
+                              icon: Icons.favorite,
+                              color: Color(0xFF5D78FD),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text("Terbaru",
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          NewsCard(
+                            title: "Pemerintah Terus Gencarkan Upaya Penanggulangan Stunting di Indonesia",
+                            date: "10 May 2025",
+                            description:
+                                "Stunting masih menjadi tantangan serius dalam pembangunan sumber daya manusia di Indonesia.",
+                            imagePath: 'assets/images/3.jpg',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => NewsDetailScreen(
+                                    title: "Pemerintah Terus Gencarkan Upaya Penanggulangan Stunting di Indonesia",
+                                    date: "10 May 2025",
+                                    imagePath: 'assets/images/3.jpg',
+                                    content:
+                                        "Stunting masih menjadi tantangan serius dalam pembangunan sumber daya manusia di Indonesia. Data dari Survei Kesehatan Indonesia (SKI) 2023 menunjukkan bahwa angka stunting nasional berada pada angka 21,6 persen. Meskipun mengalami penurunan dari tahun sebelumnya, angka tersebut masih jauh dari target pemerintah yang ingin menurunkan stunting hingga 14 persen pada tahun 2024. Berbagai program terus digalakkan oleh pemerintah, seperti pemberian makanan tambahan bergizi, edukasi pola asuh kepada orang tua, serta pemeriksaan kesehatan rutin bagi ibu hamil dan balita. Presiden Joko Widodo dalam beberapa kesempatan menegaskan pentingnya kerja sama lintas sektor mulai dari pemerintah pusat hingga ke tingkat desa dalam upaya percepatan penurunan stunting. Para ahli kesehatan juga menekankan bahwa pencegahan stunting harus dimulai sejak masa kehamilan, bahkan sebelum bayi lahir. Asupan gizi yang cukup, akses air bersih, dan sanitasi yang baik merupakan faktor penting dalam menciptakan lingkungan tumbuh kembang yang sehat bagi anak. Dengan komitmen bersama dan keterlibatan masyarakat, Indonesia optimistis mampu mengatasi masalah stunting secara berkelanjutan.",
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-            ],
+            ),
           ),
-        ),
-      ),
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: 0,
-        onTap: (index) {
-          if (index == 0) return;
-          if (index == 1) Navigator.pushNamed(context, '/dataanak');
-          if (index == 2) Navigator.pushNamed(context, '/berita');
-          if (index == 3) Navigator.pushNamed(context, '/profil');
-        },
+
+          // BottomNavBar
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: BottomNavBar(
+              currentIndex: 0,
+              onTap: (index) {
+                if (index == 0) return;
+                if (index == 1) Navigator.pushNamed(context, '/dataanak');
+                if (index == 2) Navigator.pushNamed(context, '/berita');
+                if (index == 3) Navigator.pushNamed(context, '/profil');
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
 
 class InfoCard extends StatelessWidget {
   final String name;
@@ -188,6 +261,13 @@ class InfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,13 +331,24 @@ class CategoryCard extends StatelessWidget {
     return Container(
       height: 100,
       decoration: BoxDecoration(
-        color: color,
+        gradient: LinearGradient(
+          colors: [color.withOpacity(0.8), color],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: Colors.white, size: 28),
+          Icon(icon, color: Colors.white, size: 36),
           const SizedBox(height: 8),
           Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ],
@@ -271,7 +362,7 @@ class NewsCard extends StatelessWidget {
   final String date;
   final String description;
   final String imagePath;
-  final VoidCallback? onTap; // Tambahan
+  final VoidCallback? onTap;
 
   const NewsCard({
     super.key,
@@ -285,12 +376,20 @@ class NewsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap, // Tambahan
+      onTap: onTap,
       child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -308,7 +407,7 @@ class NewsCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 4),
                   Text(date, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                   const SizedBox(height: 6),

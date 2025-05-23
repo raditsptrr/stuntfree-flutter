@@ -138,7 +138,7 @@ class BeritaScreen extends StatelessWidget {
         currentIndex: 2,
         onTap: (index) {
           if (index == 0) Navigator.pushReplacementNamed(context, '/home');
-          if (index == 1) Navigator.pushReplacementNamed(context, '/tambah');
+          if (index == 1) Navigator.pushReplacementNamed(context, '/dataanak');
           if (index == 2) return;
           if (index == 3) Navigator.pushReplacementNamed(context, '/profil');
         },

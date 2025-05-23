@@ -24,7 +24,6 @@ class _DataAnakPageState extends State<DataAnakPage> {
     final idOrtu = prefs.getInt('id_orangtua');
     if (idOrtu == null) return [];
     final data = await ApiService().fetchAnak(idOrtu);
-    // Filter yang statusnya 'diterima' sudah di API, tapi tetap jaga aman
     return data.where((anak) => anak['status'].toString().toLowerCase() == 'diterima').toList();
   }
 
@@ -45,19 +44,6 @@ class _DataAnakPageState extends State<DataAnakPage> {
             letterSpacing: 1,
           ),
         ),
-        leading: const Padding(
-          padding: EdgeInsets.only(left: 12),
-          child: CircleAvatar(
-            backgroundColor: Color(0xFFE3F0FF),
-            child: Icon(Icons.person, color: Color(0xFF5D78FD)),
-          ),
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.menu, color: Color(0xFF5D78FD)),
-          ),
-        ],
       ),
       body: Stack(
         children: [
@@ -76,7 +62,6 @@ class _DataAnakPageState extends State<DataAnakPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
                     const SizedBox(height: 8),
-                    // Search bar (belum aktif fungsi pencarian)
                     const TextField(
                       decoration: InputDecoration(
                         hintText: 'Cari nama anak...',
@@ -92,9 +77,9 @@ class _DataAnakPageState extends State<DataAnakPage> {
                     ),
                     const SizedBox(height: 20),
                     ...anakList.map((anak) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _buildChildCard(context, anak),
-                    )),
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _buildChildCard(context, anak),
+                        )),
                     const SizedBox(height: 100),
                   ],
                 );
@@ -133,7 +118,6 @@ class _DataAnakPageState extends State<DataAnakPage> {
     int jenisKelaminValue = anak['jenis_kelamin'] ?? -1;
     bool isLakiLaki = jenisKelaminValue == 1;
 
-    // Contoh asumsi field z_score di API sebagai tanda ada prediksi
     bool hasPrediction = anak['z_score'] != null;
     String zScore = anak['z_score']?.toString() ?? '-';
 
@@ -155,7 +139,11 @@ class _DataAnakPageState extends State<DataAnakPage> {
         children: [
           Text(
             anak['nama'] ?? '-',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF5D78FD),
+            ),
           ),
           const SizedBox(height: 4),
           Text('NIK: ${anak['nik'] ?? '-'}', style: const TextStyle(color: Colors.black54)),
@@ -175,7 +163,6 @@ class _DataAnakPageState extends State<DataAnakPage> {
               Text(_calculateAge(anak['tanggal_lahir'] ?? '2000-01-01')),
             ],
           ),
-
           const SizedBox(height: 16),
           Row(
             children: [

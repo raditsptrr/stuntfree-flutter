@@ -14,8 +14,8 @@ class _TambahDataAnakPageState extends State<TambahDataAnakPage> {
   final _namaController = TextEditingController();
   final _nikController = TextEditingController();
   final _tanggalLahirController = TextEditingController();
-
   int? _jenisKelaminValue;
+  bool _isSending = false;
 
   Future<void> _kirimData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -28,15 +28,21 @@ class _TambahDataAnakPageState extends State<TambahDataAnakPage> {
       return;
     }
 
-    if (_jenisKelaminValue == null) {
+    if (_namaController.text.isEmpty ||
+        _nikController.text.isEmpty ||
+        _tanggalLahirController.text.isEmpty ||
+        _jenisKelaminValue == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan pilih jenis kelamin')),
+        const SnackBar(content: Text('Semua field harus diisi')),
       );
       return;
     }
 
-    final url = Uri.parse('http://127.0.0.1:8000/api/anak');
+    setState(() {
+      _isSending = true;
+    });
 
+    final url = Uri.parse('http://127.0.0.1:8000/api/anak');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -46,15 +52,19 @@ class _TambahDataAnakPageState extends State<TambahDataAnakPage> {
         'jenis_kelamin': _jenisKelaminValue.toString(),
         'tanggal_lahir': _tanggalLahirController.text,
         'id_orangtua': idOrtu,
-        'status': 'proses',  // otomatis status "proses"
+        'status': 'proses',
       }),
     );
 
+    setState(() {
+      _isSending = false;
+    });
+
     if (response.statusCode == 200 || response.statusCode == 201) {
+      Navigator.pushReplacementNamed(context, '/dataanak');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Data berhasil dikirim!')),
       );
-      Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Gagal kirim data.')),
@@ -72,9 +82,97 @@ class _TambahDataAnakPageState extends State<TambahDataAnakPage> {
 
     if (pickedDate != null) {
       setState(() {
-        _tanggalLahirController.text = pickedDate.toIso8601String().split('T')[0];
+        _tanggalLahirController.text =
+            pickedDate.toIso8601String().split('T')[0];
       });
     }
+  }
+
+  void _showCancelConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konfirmasi'),
+        content: const Text('Apakah Anda yakin ingin membatalkan pengisian form?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tidak'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacementNamed(context, '/dataanak');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5D78FD),
+            ),
+            child: const Text('Ya', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSubmitConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Validasi Data'),
+        content: const Text('Apakah data anak sudah sesuai?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tidak'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _kirimData(); // hanya kirim setelah klik "Ya"
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5D78FD),
+            ),
+            child: const Text('Ya', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration() => InputDecoration(
+        filled: true,
+        fillColor: const Color(0xFFF0F3FA),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      );
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    VoidCallback? onTap,
+  }) {
+    return TextField(
+      controller: controller,
+      readOnly: onTap != null,
+      onTap: onTap,
+      style: const TextStyle(color: Colors.black),
+      decoration: _inputDecoration(),
+    );
+  }
+
+  Widget _buildLabel(String label) {
+    return Text(
+      label,
+      style: const TextStyle(
+        fontWeight: FontWeight.w700,
+        fontSize: 14,
+        color: Color(0xFF5D78FD),
+      ),
+    );
   }
 
   @override
@@ -86,55 +184,71 @@ class _TambahDataAnakPageState extends State<TambahDataAnakPage> {
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          'TAMBAH DATA',
+          'Tambah Data',
           style: TextStyle(
             color: Color(0xFF5D78FD),
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
             letterSpacing: 1,
           ),
         ),
+        iconTheme: const IconThemeData(color: Color(0xFF5D78FD)),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Center(
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
           child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            constraints: const BoxConstraints(maxWidth: 500),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: const [
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
                 BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
+                  color: Colors.blue.withOpacity(0.1),
+                  blurRadius: 12,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
+            padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildLabel('Nama'),
+                const Text(
+                  'Silakan isi data anak \nAnda di sini.',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF5D78FD),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Data akan diverifikasi oleh petugas selama jam kerja.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                _buildLabel('Nama Anak'),
+                const SizedBox(height: 6),
                 _buildTextField(controller: _namaController),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 _buildLabel('NIK'),
+                const SizedBox(height: 6),
                 _buildTextField(controller: _nikController),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 _buildLabel('Jenis Kelamin'),
+                const SizedBox(height: 6),
                 DropdownButtonFormField<int>(
                   value: _jenisKelaminValue,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFFF2F2F2),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  ),
+                  decoration: _inputDecoration(),
+                  style: const TextStyle(color: Colors.black),
                   items: const [
                     DropdownMenuItem(value: 0, child: Text('Perempuan')),
                     DropdownMenuItem(value: 1, child: Text('Laki-laki')),
@@ -146,24 +260,27 @@ class _TambahDataAnakPageState extends State<TambahDataAnakPage> {
                   },
                 ),
 
-                const SizedBox(height: 12),
-                _buildLabel('Tanggal Lahir (YYYY-MM-DD)'),
+                const SizedBox(height: 16),
+                _buildLabel('Tanggal Lahir'),
+                const SizedBox(height: 6),
                 _buildTextField(
                   controller: _tanggalLahirController,
                   onTap: _selectTanggalLahir,
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
                 Row(
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: _showCancelConfirmation,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                           ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         child: const Text('Batal'),
                       ),
@@ -171,14 +288,25 @@ class _TambahDataAnakPageState extends State<TambahDataAnakPage> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _kirimData,
+                        onPressed: _isSending ? null : _showSubmitConfirmation,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF5D78FD),
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                           ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                        child: const Text('Tambah Data'),
+                        child: _isSending
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('Tambah Data'),
                       ),
                     ),
                   ],
@@ -187,33 +315,6 @@ class _TambahDataAnakPageState extends State<TambahDataAnakPage> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({required TextEditingController controller, VoidCallback? onTap}) {
-    return TextField(
-      controller: controller,
-      readOnly: onTap != null,
-      onTap: onTap,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: const Color(0xFFF2F2F2),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
-    );
-  }
-
-  Widget _buildLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontWeight: FontWeight.w600,
-        color: Color(0xFF5D78FD),
       ),
     );
   }

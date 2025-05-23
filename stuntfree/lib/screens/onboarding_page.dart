@@ -96,7 +96,6 @@ class _OnboardingPageState extends State<OnboardingPage>
     required String backgroundImage,
     required String title,
     required String description,
-    bool showChildImage = false,
   }) {
     return Stack(
       fit: StackFit.expand,
@@ -112,20 +111,22 @@ class _OnboardingPageState extends State<OnboardingPage>
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (showChildImage)
-                  FadeTransition(
-                    opacity: _imageOpacity,
-                    child: SlideTransition(
-                      position: _imageSlide,
+                const SizedBox(height: 40),
+                FadeTransition(
+                  opacity: _imageOpacity,
+                  child: SlideTransition(
+                    position: _imageSlide,
+                    child: Align(
+                      alignment: Alignment.topCenter,
                       child: Image.asset(
-                        'assets/images/child.png',
-                        height: 240,
+                        'assets/images/jerapahputih.png',
+                        height: 100,
                       ),
                     ),
                   ),
-                const SizedBox(height: 30),
+                ),
+                const Spacer(),
                 FadeTransition(
                   opacity: _textOpacity,
                   child: SlideTransition(
@@ -136,7 +137,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                           title,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 20,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -155,6 +156,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                     ),
                   ),
                 ),
+                const Spacer(flex: 2),
               ],
             ),
           ),
@@ -185,66 +187,68 @@ class _OnboardingPageState extends State<OnboardingPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          PageView(
-            controller: _pageController,
-            onPageChanged: _handlePageChange,
-            children: [
-              _buildPage(
-                backgroundImage: '1.png',
-                title: 'Aplikasi Prediksi Stunting\nPada Anak',
-                description:
-                    'Easy, Quick and safest way to book your appointments. Find your specialist doctor today.',
-                showChildImage: true,
-              ),
-              _buildPage(
-                backgroundImage: '2.jpg',
-                title: 'Pantau Data Anak\nLebih Praktis',
-                description:
-                    'Kelola dan simpan data anak Anda dengan aman dan mudah melalui aplikasi ini.',
-              ),
-              _buildPage(
-                backgroundImage: '3.jpg',
-                title: 'Dapatkan Informasi\nSeputar Stunting',
-                description:
-                    'Baca berita dan artikel terpercaya tentang pencegahan dan penanganan stunting.',
-              ),
-            ],
-          ),
-          SafeArea(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
+      body: SafeArea(
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            PageView(
+              controller: _pageController,
+              onPageChanged: _handlePageChange,
               children: [
-                _buildIndicator(),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: ElevatedButton(
-                    onPressed: _manualNext,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      minimumSize: const Size.fromHeight(50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                _buildPage(
+                  backgroundImage: '1.png',
+                  title: 'Aplikasi Prediksi Stunting\nPada Anak',
+                  description:
+                      'Easy, Quick and safest way to book your appointments. Find your specialist doctor today.',
+                ),
+                _buildPage(
+                  backgroundImage: '2.jpg',
+                  title: 'Pantau Data Anak\nLebih Praktis',
+                  description:
+                      'Kelola dan simpan data anak Anda dengan aman dan mudah melalui aplikasi ini.',
+                ),
+                _buildPage(
+                  backgroundImage: '3.jpg',
+                  title: 'Dapatkan Informasi\nSeputar Stunting',
+                  description:
+                      'Baca berita dan artikel terpercaya tentang pencegahan dan penanganan stunting.',
+                ),
+              ],
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildIndicator(),
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: ElevatedButton(
+                      onPressed: _manualNext,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        minimumSize: const Size.fromHeight(50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      _currentPage < 2 ? 'Next' : 'Mulai',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                      child: Text(
+                        _currentPage < 2 ? 'Next' : 'Mulai',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 40),
-              ],
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
-          )
-        ],
+          ],
+        ),
       ),
     );
   }
