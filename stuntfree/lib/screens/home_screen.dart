@@ -1,10 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stuntfree/widgets/bottom_navbar.dart';
 import 'package:stuntfree/screens/child_detail_screen.dart';
 import 'package:stuntfree/screens/news_detail_screen.dart';
+import '../service/api_service.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late Future<List<Map<String, dynamic>>> _anakFuture;
+
+  Future<String?> getNamaOrtu() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('nama_ortu');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _anakFuture = _fetchAnakDiterima();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchAnakDiterima() async {
+    final prefs = await SharedPreferences.getInstance();
+    final idOrtu = prefs.getInt('id_orangtua');
+    if (idOrtu == null) return [];
+    final data = await ApiService().fetchAnak(idOrtu);
+    // Filter anak yang statusnya diterima
+    return data.where((anak) => anak['status'].toString().toLowerCase() == 'diterima').toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +41,6 @@ class HomeScreen extends StatelessWidget {
       extendBody: true,
       body: Stack(
         children: [
-          // Background dan konten utama
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -55,22 +83,66 @@ class HomeScreen extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(height: 1),
-                                ShaderMask(
-                                  shaderCallback: (Rect bounds) {
-                                    return const LinearGradient(
-                                      colors: [Color(0xFF5D78FD), Color(0xFF448AFF)],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ).createShader(bounds);
+                                FutureBuilder<String?>(
+                                  future: getNamaOrtu(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState == ConnectionState.waiting) {
+                                      return ShaderMask(
+                                        shaderCallback: (Rect bounds) {
+                                          return const LinearGradient(
+                                            colors: [Color(0xFF5D78FD), Color(0xFF448AFF)],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ).createShader(bounds);
+                                        },
+                                        child: const Text(
+                                          "...",
+                                          style: TextStyle(
+                                            fontSize: 32,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      );
+                                    } else if (snapshot.hasError) {
+                                      return ShaderMask(
+                                        shaderCallback: (Rect bounds) {
+                                          return const LinearGradient(
+                                            colors: [Color(0xFF5D78FD), Color(0xFF448AFF)],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ).createShader(bounds);
+                                        },
+                                        child: const Text(
+                                          "Error",
+                                          style: TextStyle(
+                                            fontSize: 32,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      );
+                                    } else {
+                                      final namaOrtu = snapshot.data ?? 'Nama Tidak Tersedia';
+                                      return ShaderMask(
+                                        shaderCallback: (Rect bounds) {
+                                          return const LinearGradient(
+                                            colors: [Color(0xFF5D78FD), Color(0xFF448AFF)],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ).createShader(bounds);
+                                        },
+                                        child: Text(
+                                          namaOrtu.toUpperCase(),
+                                          style: const TextStyle(
+                                            fontSize: 32,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      );
+                                    }
                                   },
-                                  child: const Text(
-                                    "FAHZIL RAUL",
-                                    style: TextStyle(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.white,
-                                    ),
-                                  ),
                                 ),
                               ],
                             ),
@@ -84,7 +156,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // Search Bar
+                    // Search bar
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: TextField(
@@ -104,45 +176,72 @@ class HomeScreen extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
-                    // Info Card List
-                    SizedBox(
-                      height: 140,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.only(left: 16),
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const ChildDetailScreen()),
+                    // Info Card List dari API (dengan hasil model)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16),
+                      child: SizedBox(
+                        height: 155,
+                        child: FutureBuilder<List<Map<String, dynamic>>>(
+                          future: _anakFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator());
+                            } else if (snapshot.hasError) {
+                              return const Center(child: Text('Gagal memuat data anak'));
+                            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                              return const Center(child: Text('Tidak ada anak yang diterima'));
+                            } else {
+                              final anakList = snapshot.data!;
+                              return ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: anakList.length,
+                                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                itemBuilder: (context, index) {
+                                  final anak = anakList[index];
+
+                                  // Ambil hasil model dari data API dengan key 'hasil'
+                                  final hasilModel = anak['hasil'] ?? 'Tidak Ada Data';
+
+                                  return GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const ChildDetailScreen(),
+                                        ),
+                                      );
+                                    },
+                                    child: InfoCard(
+                                      name: anak['nama'] ?? '-',
+                                      gender: anak['jenis_kelamin'] == 1
+                                          ? 'Laki-laki'
+                                          : anak['jenis_kelamin'] == 0
+                                              ? 'Perempuan'
+                                              : '-',
+                                      weight: anak['berat']?.round() ?? 0,
+                                      age: anak['usia_bulan']?.round() ?? 0,
+                                      height: anak['tinggi']?.round() ?? 0,
+                                      score: double.tryParse(anak['z_score']?.toString() ?? '0') ?? 0.0,
+                                      color: const Color(0xFF5D78FD),
+                                      modelResult: hasilModel,  // pakai key 'hasil' dari API
+                                    ),
+                                  );
+                                },
+
                               );
-                            },
-                            child: const InfoCard(
-                              name: "Fahzil Raul",
-                              gender: "Laki-Laki",
-                              weight: 50,
-                              age: 20,
-                              height: 170,
-                              score: -2.3,
-                              color: Color(0xFF5D78FD),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
+                            }
+                          },
+                        ),
                       ),
                     ),
 
                     const SizedBox(height: 20),
-
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Text("Teman Sehat Anak",
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
-
                     const SizedBox(height: 12),
-
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Row(
@@ -165,23 +264,20 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 24),
-
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Text("Terbaru",
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
-
                     const SizedBox(height: 12),
-
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
                         children: [
                           NewsCard(
-                            title: "Pemerintah Terus Gencarkan Upaya Penanggulangan Stunting di Indonesia",
+                            title:
+                                "Pemerintah Terus Gencarkan Upaya Penanggulangan Stunting di Indonesia",
                             date: "10 May 2025",
                             description:
                                 "Stunting masih menjadi tantangan serius dalam pembangunan sumber daya manusia di Indonesia.",
@@ -191,11 +287,12 @@ class HomeScreen extends StatelessWidget {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => NewsDetailScreen(
-                                    title: "Pemerintah Terus Gencarkan Upaya Penanggulangan Stunting di Indonesia",
+                                    title:
+                                        "Pemerintah Terus Gencarkan Upaya Penanggulangan Stunting di Indonesia",
                                     date: "10 May 2025",
                                     imagePath: 'assets/images/3.jpg',
                                     content:
-                                        "Stunting masih menjadi tantangan serius dalam pembangunan sumber daya manusia di Indonesia. Data dari Survei Kesehatan Indonesia (SKI) 2023 menunjukkan bahwa angka stunting nasional berada pada angka 21,6 persen. Meskipun mengalami penurunan dari tahun sebelumnya, angka tersebut masih jauh dari target pemerintah yang ingin menurunkan stunting hingga 14 persen pada tahun 2024. Berbagai program terus digalakkan oleh pemerintah, seperti pemberian makanan tambahan bergizi, edukasi pola asuh kepada orang tua, serta pemeriksaan kesehatan rutin bagi ibu hamil dan balita. Presiden Joko Widodo dalam beberapa kesempatan menegaskan pentingnya kerja sama lintas sektor mulai dari pemerintah pusat hingga ke tingkat desa dalam upaya percepatan penurunan stunting. Para ahli kesehatan juga menekankan bahwa pencegahan stunting harus dimulai sejak masa kehamilan, bahkan sebelum bayi lahir. Asupan gizi yang cukup, akses air bersih, dan sanitasi yang baik merupakan faktor penting dalam menciptakan lingkungan tumbuh kembang yang sehat bagi anak. Dengan komitmen bersama dan keterlibatan masyarakat, Indonesia optimistis mampu mengatasi masalah stunting secara berkelanjutan.",
+                                        "Stunting masih menjadi tantangan serius dalam pembangunan sumber daya manusia di Indonesia. [...]",
                                   ),
                                 ),
                               );
@@ -230,7 +327,7 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-
+// Modifikasi InfoCard supaya bisa menerima hasil model
 class InfoCard extends StatelessWidget {
   final String name;
   final String gender;
@@ -239,6 +336,9 @@ class InfoCard extends StatelessWidget {
   final int height;
   final double score;
   final Color color;
+
+  // Tambahan untuk hasil model prediksi
+  final String? modelResult;
 
   const InfoCard({
     super.key,
@@ -249,13 +349,14 @@ class InfoCard extends StatelessWidget {
     required this.height,
     required this.score,
     required this.color,
+    this.modelResult,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 160,
-      height: 140,
+      height: 155, // tambah tinggi sedikit untuk hasil model
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
@@ -274,7 +375,7 @@ class InfoCard extends StatelessWidget {
         children: [
           Text(name.toUpperCase(),
               style: const TextStyle(
-                  color: Colors.yellow,
+                  color: Color.fromARGB(255, 255, 224, 98),
                   fontSize: 14,
                   fontWeight: FontWeight.bold)),
           const SizedBox(height: 2),
@@ -298,14 +399,28 @@ class InfoCard extends StatelessWidget {
             children: [
               const Icon(Icons.calendar_today, color: Colors.white, size: 14),
               const SizedBox(width: 4),
-              Text("$age Tahun • $height cm", style: const TextStyle(color: Colors.white, fontSize: 12)),
+              Text("$age Bulan • $height cm", style: const TextStyle(color: Colors.white, fontSize: 12)),
             ],
           ),
           const Spacer(),
+
+          // Tampilkan score dan hasil model di bawah
+          if (modelResult != null) ...[
+            Text(
+              'Prediksi: $modelResult',
+              style: const TextStyle(
+                color: Color.fromARGB(255, 255, 224, 98),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+          ],
+
           Align(
             alignment: Alignment.bottomRight,
             child: Text(
-              score.toString(),
+              score.toStringAsFixed(2),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 20,
@@ -319,6 +434,7 @@ class InfoCard extends StatelessWidget {
   }
 }
 
+// Kelas CategoryCard dan NewsCard tetap sama seperti sebelumnya
 class CategoryCard extends StatelessWidget {
   final String title;
   final IconData icon;
@@ -342,16 +458,19 @@ class CategoryCard extends StatelessWidget {
             color: color.withOpacity(0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
-          ),
+          )
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: Colors.white, size: 36),
-          const SizedBox(height: 8),
-          Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        ],
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 38, color: Colors.white),
+            const SizedBox(height: 8),
+            Text(title,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
       ),
     );
   }
@@ -362,7 +481,7 @@ class NewsCard extends StatelessWidget {
   final String date;
   final String description;
   final String imagePath;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
   const NewsCard({
     super.key,
@@ -370,51 +489,51 @@ class NewsCard extends StatelessWidget {
     required this.date,
     required this.description,
     required this.imagePath,
-    this.onTap,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+    return Card(
+      clipBehavior: Clip.hardEdge,
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: onTap,
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                imagePath,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                    image: AssetImage(imagePath), fit: BoxFit.cover),
               ),
             ),
-            const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 4),
-                  Text(date, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                  const SizedBox(height: 6),
-                  Text(description, style: const TextStyle(fontSize: 12)),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14)),
+                    const SizedBox(height: 4),
+                    Text(date,
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.grey)),
+                    const SizedBox(height: 6),
+                    Text(description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12)),
+                  ],
+                ),
               ),
-            ),
+            )
           ],
         ),
       ),

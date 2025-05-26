@@ -14,21 +14,44 @@ class ApiService {
   // tampil data anak
  Future<List<Map<String, dynamic>>> fetchAnak(int idOrtu) async {
   final url = Uri.parse('$baseUrl/anak');
-
   final response = await http.get(url);
+
   if (response.statusCode == 200) {
     final List data = json.decode(response.body);
 
-    return data
+    final anakList = data
         .where((anak) =>
             anak['id_orangtua'] == idOrtu &&
-            anak['status'] == 'diterima') // Tambahkan filter status
+            anak['status'] == 'diterima') // Filter anak diterima
         .cast<Map<String, dynamic>>()
         .toList();
+
+    // Ambil pengukuran
+    final pengukuranList = await fetchPengukuran();
+
+    // Gabungkan z_score & usia_bulan ke data anak
+    for (var anak in anakList) {
+      final pengukuranAnak = pengukuranList
+          .where((p) => p.idAnak == anak['id'])
+          .toList()
+        ..sort((a, b) => b.id.compareTo(a.id)); // ambil pengukuran terbaru
+
+      if (pengukuranAnak.isNotEmpty) {
+        final latest = pengukuranAnak.first;
+        anak['z_score'] = latest.zsTbu;
+        anak['usia_bulan'] = latest.usiaBulan;
+        anak['hasil'] = latest.hasil;
+        anak['berat'] = latest.berat;
+        anak['tinggi'] = latest.tinggi;
+      }
+    }
+
+    return anakList;
   } else {
     throw Exception('Gagal mengambil data anak');
   }
 }
+
 
 
   // Tambah data anak
@@ -54,6 +77,28 @@ class ApiService {
   }
 }
 
+Future<Map<String, dynamic>?> getDashboardData() async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/dashboard'),
+      headers: {
+        'Accept': 'application/json',
+        // no authorization header
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      print('Gagal ambil data dashboard: ${response.statusCode}');
+      return null;
+    }
+  } catch (e) {
+    print('Error saat ambil dashboard: $e');
+    return null;
+  }
+}
+
 
 
   // Login orang tua
@@ -76,6 +121,7 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', token);
     await prefs.setInt('id_orangtua', ortu.id);
+    await prefs.setString('nama_ortu', ortu.nama);
 
     return {
       'success': true,
@@ -161,6 +207,7 @@ Future<List<Pengukuran>> fetchPengukuran() async {
   }
 }
 
+
 // Kirim data pengukuran baru
 Future<Pengukuran?> submitPengukuran({
   required int idAnak,
@@ -197,6 +244,8 @@ Future<Pengukuran?> submitPengukuran({
   }
 }
 
+
+
 // edukasi / berita
 Future<List<Edukasi>> fetchEdukasi() async {
     final response = await http.get(Uri.parse('$baseUrl/edukasi'));
@@ -208,5 +257,7 @@ Future<List<Edukasi>> fetchEdukasi() async {
       throw Exception('Gagal memuat data edukasi');
     }
   }
+
+  
 
 }

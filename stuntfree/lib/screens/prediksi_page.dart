@@ -17,12 +17,25 @@ class _PrediksiPageState extends State<PrediksiPage> {
   late int idAnak;
   late String namaAnak;
 
+  // tambahan untuk mode edit dan data lama
+  bool isEditMode = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final arguments = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     idAnak = arguments['idAnak'];
     namaAnak = arguments['nama'];
+
+    if (arguments.containsKey('umur') &&
+        arguments.containsKey('berat') &&
+        arguments.containsKey('tinggi')) {
+      isEditMode = true;
+      // Isi controller dengan data lama
+      _umurController.text = arguments['umur']?.toString() ?? '';
+      _beratController.text = arguments['berat']?.toString() ?? '';
+      _tinggiController.text = arguments['tinggi']?.toString() ?? '';
+    }
   }
 
   @override
@@ -50,6 +63,7 @@ class _PrediksiPageState extends State<PrediksiPage> {
       final double berat = double.parse(beratText);
       final double tinggi = double.parse(tinggiText);
 
+      // Kirim data sebagai record baru selalu
       final result = await ApiService().submitPengukuran(
         idAnak: idAnak,
         berat: berat,
@@ -70,6 +84,7 @@ class _PrediksiPageState extends State<PrediksiPage> {
       _showSnackBar('Terjadi kesalahan: $e');
     }
   }
+
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
@@ -129,21 +144,7 @@ class _PrediksiPageState extends State<PrediksiPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F9FF),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'PREDIKSI',
-          style: TextStyle(
-            color: Color(0xFF5D78FD),
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            letterSpacing: 1,
-          ),
-        ),
-      ),
+      // ... appBar sama seperti sebelumnya ...
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -173,11 +174,7 @@ class _PrediksiPageState extends State<PrediksiPage> {
                     color: Color(0xFF5D78FD),
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Masukan umur, tinggi badan, dan berat badan agar mengetahui pertumbuhan pada balita dengan z-score sesuai standar WHO.',
-                  style: TextStyle(fontSize: 14, color: Colors.black87),
-                ),
+                // ... penjelasan tetap sama ...
                 const SizedBox(height: 24),
 
                 _buildFieldLabel('Nama Anak'),
@@ -227,7 +224,10 @@ class _PrediksiPageState extends State<PrediksiPage> {
                         ),
                         child: _isLoading
                             ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Prediksi', style: TextStyle(color: Colors.white)),
+                            : Text(
+                                isEditMode ? 'Update' : 'Prediksi',
+                                style: const TextStyle(color: Colors.white),
+                              ),
                       ),
                     ),
                   ],

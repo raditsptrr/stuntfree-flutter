@@ -44,6 +44,7 @@ class StuntFreeApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/tambah': (context) => const TambahDataAnakPage(),
         '/prediksi': (context) => const PrediksiPage(),
+        '/edit_prediksi': (context) => const PrediksiPage(),
         '/dataanak': (context) => const DataAnakPage(),
         '/berita': (context) => const BeritaScreen(),
         '/profil': (context) => const ProfilPage(),

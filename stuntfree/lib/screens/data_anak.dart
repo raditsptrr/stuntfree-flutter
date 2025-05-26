@@ -113,114 +113,166 @@ class _DataAnakPageState extends State<DataAnakPage> {
       ),
     );
   }
+Widget _buildChildCard(BuildContext context, Map<String, dynamic> anak) {
+  int jenisKelaminValue = anak['jenis_kelamin'] ?? -1;
+  bool isLakiLaki = jenisKelaminValue == 1;
 
-  Widget _buildChildCard(BuildContext context, Map<String, dynamic> anak) {
-    int jenisKelaminValue = anak['jenis_kelamin'] ?? -1;
-    bool isLakiLaki = jenisKelaminValue == 1;
+  bool hasPrediction = anak['z_score'] != null;
+  String zScore = anak['z_score']?.toString() ?? '-';
+  String usiaBulan = anak['usia_bulan']?.toString() ?? '-';
 
-    bool hasPrediction = anak['z_score'] != null;
-    String zScore = anak['z_score']?.toString() ?? '-';
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: Offset(0, 3),
-          )
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            anak['nama'] ?? '-',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF5D78FD),
-            ),
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: const [
+        BoxShadow(
+          color: Colors.black12,
+          blurRadius: 8,
+          offset: Offset(0, 4),
+        )
+      ],
+    ),
+    margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Nama dan NIK
+        Text(
+          anak['nama'] ?? '-',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF5D78FD),
           ),
-          const SizedBox(height: 4),
-          Text('NIK: ${anak['nik'] ?? '-'}', style: const TextStyle(color: Colors.black54)),
-          const SizedBox(height: 12),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'NIK: ${anak['nik'] ?? '-'}',
+          style: const TextStyle(color: Colors.black54),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Info dasar: Jenis Kelamin, Usia, Umur Bulan
+        Row(
+          children: [
+            Icon(
+              isLakiLaki ? Icons.male : Icons.female,
+              color: const Color(0xFF5D78FD),
+              size: 18,
+            ),
+            const SizedBox(width: 6),
+            Text(isLakiLaki ? 'Laki-laki' : 'Perempuan'),
+            const SizedBox(width: 16),
+            const Icon(Icons.cake, size: 18, color: Color(0xFF5D78FD)),
+            const SizedBox(width: 6),
+            Text(_calculateAge(anak['tanggal_lahir'] ?? '2000-01-01')),
+            const SizedBox(width: 16),
+            const Icon(Icons.access_time, size: 18, color: Color(0xFF5D78FD)),
+            const SizedBox(width: 6),
+            Text('$usiaBulan bln'),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        // Berat dan Tinggi
+        if (anak['berat'] != null && anak['tinggi'] != null) ...[
           Row(
             children: [
-              Icon(
-                isLakiLaki ? Icons.male : Icons.female,
-                size: 16,
-                color: const Color(0xFF5D78FD),
-              ),
-              const SizedBox(width: 4),
-              Text(isLakiLaki ? 'Laki-laki' : 'Perempuan'),
+              const Icon(Icons.monitor_weight, size: 18, color: Colors.orange),
+              const SizedBox(width: 6),
+              Text('Berat: ${anak['berat']} kg'),
               const SizedBox(width: 16),
-              const Icon(Icons.cake, size: 16, color: Color(0xFF5D78FD)),
-              const SizedBox(width: 4),
-              Text(_calculateAge(anak['tanggal_lahir'] ?? '2000-01-01')),
+              const Icon(Icons.height, size: 18, color: Colors.teal),
+              const SizedBox(width: 6),
+              Text('Tinggi: ${anak['tinggi']} cm'),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+        ],
+
+        // Hasil prediksi
+        if (hasPrediction) ...[
           Row(
             children: [
+              const Icon(Icons.warning_amber, size: 18, color: Colors.redAccent),
+              const SizedBox(width: 6),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (hasPrediction) ...[
-                      Row(
-                        children: const [
-                          Icon(Icons.warning_amber, size: 16, color: Colors.redAccent),
-                          SizedBox(width: 4),
-                          Text('Stunting', style: TextStyle(color: Colors.redAccent)),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.analytics, size: 16, color: Colors.deepPurple),
-                          const SizedBox(width: 4),
-                          Text('Z-Score: $zScore'),
-                        ],
-                      ),
-                    ],
-                  ],
+                child: Text(
+                  anak['hasil'] ?? 'Hasil tidak tersedia',
+                  style: const TextStyle(color: Colors.redAccent),
                 ),
               ),
-              TextButton.icon(
-              onPressed: () {
-                if (!hasPrediction) {
-                  Navigator.pushNamed(
-                    context,
-                    '/prediksi',
-                    arguments: {
-                      'idAnak': anak['id'],
-                      'nama': anak['nama'],
-                    },
-                  );
-                } else {
-                  Navigator.pushNamed(context, '/edit_prediksi');
-                }
-              },
-              style: TextButton.styleFrom(
-                backgroundColor: const Color(0xFF5D78FD),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              icon: Icon(hasPrediction ? Icons.edit : Icons.calculate, color: Colors.white),
-              label: Text(hasPrediction ? 'Edit' : 'Prediksi'),
-            ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(Icons.analytics, size: 18, color: Colors.deepPurple),
+              const SizedBox(width: 6),
+              Text('Z-Score: $zScore'),
             ],
           ),
         ],
-      ),
-    );
-  }
+
+        const SizedBox(height: 16),
+
+        // Tombol
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: () {
+              if (!hasPrediction) {
+                Navigator.pushNamed(
+                  context,
+                  '/prediksi',
+                  arguments: {
+                    'idAnak': anak['id'],
+                    'nama': anak['nama'],
+                  },
+                );
+              } else {
+                Navigator.pushNamed(
+                  context,
+                  '/edit_prediksi',
+                  arguments: {
+                    'idAnak': anak['id'],
+                    'nama': anak['nama'],
+                    'umur': anak['usia_bulan'],
+                    'berat': anak['berat'],
+                    'tinggi': anak['tinggi'],
+                  },
+                );
+              }
+            },
+            style: TextButton.styleFrom(
+              backgroundColor: const Color(0xFF5D78FD),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: Icon(
+              hasPrediction ? Icons.edit : Icons.calculate,
+              color: Colors.white,
+              size: 20,
+            ),
+            label: Text(
+              hasPrediction ? 'Edit' : 'Prediksi',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+
 
   String _calculateAge(String tanggalLahir) {
     try {

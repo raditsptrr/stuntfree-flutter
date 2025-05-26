@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../service/api_service.dart';
 import '../models/ortu.dart';
 
@@ -47,12 +46,7 @@ class _LoginPageState extends State<LoginPage> {
       final result = await apiService.login(email, password);
 
       if (result['success']) {
-        Ortu ortu = result['ortu'];
-        String token = result['token'];
-
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('id_ortu', ortu.id!);
-
+        // Login berhasil, navigasi ke home
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         setState(() {
@@ -159,32 +153,32 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 24),
 
                           // Tombol Login
-                            SizedBox(
+                          SizedBox(
                             width: double.infinity,
                             height: 50,
                             child: ElevatedButton(
                               onPressed: isLoading ? null : _login,
                               style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF5D78FD),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              foregroundColor: Colors.white, // Set text color to white
+                                backgroundColor: const Color(0xFF5D78FD),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                foregroundColor: Colors.white,
                               ),
                               child: isLoading
-                                ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                                : const Text(
-                                  'Masuk',
-                                  style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white, // Ensure text is white
-                                  ),
-                                ),
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                  : const Text(
+                                      'Masuk',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                             ),
-                            ),
+                          ),
 
                           if (errorMessage != null) ...[
                             const SizedBox(height: 16),
@@ -203,7 +197,10 @@ class _LoginPageState extends State<LoginPage> {
                                 children: [
                                   const TextSpan(
                                     text: 'Belum punya akun? ',
-                                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
                                   ),
                                   TextSpan(
                                     text: 'Daftar di sini',
