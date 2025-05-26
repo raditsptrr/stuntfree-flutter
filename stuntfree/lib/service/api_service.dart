@@ -3,7 +3,10 @@ import 'package:http/http.dart' as http;
 import '../models/anak.dart';
 import '../models/ortu.dart';
 import '../models/kecamatan.dart';
+import '../models/pengukuran_model.dart';
+import '../models/edukasi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 
 class ApiService {
   final String baseUrl = 'http://127.0.0.1:8000/api';
@@ -142,4 +145,68 @@ Future<List<Kecamatan>> fetchKecamatan() async {
     throw Exception('Terjadi kesalahan saat mendaftar: $e');
   }
 }
+
+  // pengukuran 
+  // Ambil semua data pengukuran (dengan relasi anak)
+Future<List<Pengukuran>> fetchPengukuran() async {
+  final url = Uri.parse('$baseUrl/pengukuran');
+  final response = await http.get(url);
+
+  if (response.statusCode == 200) {
+    final responseData = json.decode(response.body);
+    final List list = responseData['data'];
+    return list.map((item) => Pengukuran.fromJson(item)).toList();
+  } else {
+    throw Exception('Gagal mengambil data pengukuran');
+  }
+}
+
+// Kirim data pengukuran baru
+Future<Pengukuran?> submitPengukuran({
+  required int idAnak,
+  required double berat,
+  required double tinggi,
+  required int usiaBulan,
+}) async {
+  final url = Uri.parse('$baseUrl/pengukuran');
+
+  final response = await http.post(
+    url,
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: json.encode({
+      'id_anak': idAnak,
+      'berat': berat,
+      'tinggi': tinggi,
+      'usia_bulan': usiaBulan,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    final data = json.decode(response.body);
+    if (data['success'] == true) {
+      return Pengukuran.fromJson(data['data']);
+    } else {
+      throw Exception(data['message'] ?? 'Pengukuran gagal');
+    }
+  } else {
+    print('Error: ${response.body}');
+    throw Exception('Gagal kirim data pengukuran');
+  }
+}
+
+// edukasi / berita
+Future<List<Edukasi>> fetchEdukasi() async {
+    final response = await http.get(Uri.parse('$baseUrl/edukasi'));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body)['data'] as List;
+      return data.map((json) => Edukasi.fromJson(json)).toList();
+    } else {
+      throw Exception('Gagal memuat data edukasi');
+    }
+  }
+
 }

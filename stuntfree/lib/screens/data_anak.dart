@@ -44,7 +44,7 @@ class _DataAnakPageState extends State<DataAnakPage> {
             letterSpacing: 1,
           ),
         ),
-      ),
+      ), 
       body: Stack(
         children: [
           FutureBuilder<List<Map<String, dynamic>>>(
@@ -191,23 +191,30 @@ class _DataAnakPageState extends State<DataAnakPage> {
                 ),
               ),
               TextButton.icon(
-                onPressed: () {
-                  if (!hasPrediction) {
-                    Navigator.pushNamed(context, '/prediksi');
-                  } else {
-                    Navigator.pushNamed(context, '/edit_prediksi');
-                  }
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: const Color(0xFF5D78FD),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+              onPressed: () {
+                if (!hasPrediction) {
+                  Navigator.pushNamed(
+                    context,
+                    '/prediksi',
+                    arguments: {
+                      'idAnak': anak['id'],
+                      'nama': anak['nama'],
+                    },
+                  );
+                } else {
+                  Navigator.pushNamed(context, '/edit_prediksi');
+                }
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: const Color(0xFF5D78FD),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                icon: Icon(hasPrediction ? Icons.edit : Icons.calculate, color: Colors.white),
-                label: Text(hasPrediction ? 'Edit' : 'Prediksi'),
               ),
+              icon: Icon(hasPrediction ? Icons.edit : Icons.calculate, color: Colors.white),
+              label: Text(hasPrediction ? 'Edit' : 'Prediksi'),
+            ),
             ],
           ),
         ],

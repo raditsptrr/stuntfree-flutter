@@ -1,43 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:stuntfree/widgets/bottom_navbar.dart';
 import 'package:stuntfree/screens/news_detail_screen.dart';
+import '../service/api_service.dart';
+import '../models/edukasi.dart';
 
-class BeritaScreen extends StatelessWidget {
+class BeritaScreen extends StatefulWidget {
   const BeritaScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final List<Map<String, String>> beritaList = [
-      {
-        'title': 'Gizi Bagus',
-        'date': '10 April 2025',
-        'description':
-            'Gizi yang baik penting untuk pertumbuhan anak dan mencegah stunting.',
-        'imagePath': 'assets/images/doctor.png',
-      },
-      {
-        'title': '4 Sehat 5 Sempurna',
-        'date': '11 April 2025',
-        'description':
-            'Panduan makanan sehat yang lengkap untuk anak usia dini.',
-        'imagePath': 'assets/images/doctor.png',
-      },
-      {
-        'title': 'Makan Gratis',
-        'date': '12 April 2025',
-        'description':
-            'Pemerintah menggalakkan program makan siang gratis di sekolah dasar.',
-        'imagePath': 'assets/images/doctor.png',
-      },
-      {
-        'title': 'Air Putih',
-        'date': '13 April 2025',
-        'description':
-            'Air putih membantu metabolisme tubuh dan mencegah dehidrasi.',
-        'imagePath': 'assets/images/doctor.png',
-      },
-    ];
+  State<BeritaScreen> createState() => _BeritaScreenState();
+}
 
+class _BeritaScreenState extends State<BeritaScreen> {
+  late Future<List<Edukasi>> _beritaFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _beritaFuture = ApiService().fetchEdukasi();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -89,7 +73,7 @@ class BeritaScreen extends StatelessWidget {
                     ],
                   ),
                   child: TextField(
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: 'Search',
                       prefixIcon: Icon(Icons.search, color: Colors.grey),
                       border: InputBorder.none,
@@ -99,33 +83,44 @@ class BeritaScreen extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: beritaList.length,
-                  itemBuilder: (context, index) {
-                    final berita = beritaList[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: NewsCard(
-                        title: berita['title']!,
-                        date: berita['date']!,
-                        description: berita['description']!,
-                        imagePath: berita['imagePath']!,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => NewsDetailScreen(
-                                title: berita['title']!,
-                                date: berita['date']!,
-                                imagePath: berita['imagePath']!,
-                                content: berita['description']! +
-                                    "\n\nFull article goes here...",
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                child: FutureBuilder<List<Edukasi>>(
+                  future: _beritaFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    }
+
+                    final beritaList = snapshot.data!;
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: beritaList.length,
+                      itemBuilder: (context, index) {
+                        final berita = beritaList[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: NewsCard(
+                            title: berita.judul,
+                            date: berita.kategori,
+                            description: berita.content,
+                            imagePath: berita.fullImageUrl, // default jika null
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => NewsDetailScreen(
+                                    title: berita.judul,
+                                    date: berita.kategori,
+                                    imagePath: berita.fullImageUrl,
+                                    content: berita.content,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
@@ -147,7 +142,7 @@ class BeritaScreen extends StatelessWidget {
   }
 }
 
-// Widget NewsCard langsung di sini
+// Update NewsCard untuk bisa load gambar dari network
 class NewsCard extends StatelessWidget {
   final String title;
   final String date;
@@ -185,12 +180,17 @@ class NewsCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                imagePath,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-              ),
+              child: imagePath.isNotEmpty
+                  ? Image.network(
+                      imagePath,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(Icons.image_not_supported, size: 80);
+                      },
+                    )
+                  : const Icon(Icons.image, size: 80),
             ),
             const SizedBox(width: 12),
             Expanded(
