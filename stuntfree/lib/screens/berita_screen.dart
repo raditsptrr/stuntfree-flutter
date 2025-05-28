@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stuntfree/util/app_constant.dart';
 import 'package:stuntfree/widgets/bottom_navbar.dart';
 import 'package:stuntfree/screens/news_detail_screen.dart';
 import '../service/api_service.dart';
@@ -98,13 +99,14 @@ class _BeritaScreenState extends State<BeritaScreen> {
                       itemCount: beritaList.length,
                       itemBuilder: (context, index) {
                         final berita = beritaList[index];
+                        debugPrint("Image url ${berita.fullImageUrl}");
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: NewsCard(
                             title: berita.judul,
                             date: berita.kategori,
                             description: berita.content,
-                            imagePath: berita.fullImageUrl, // default jika null
+                            imagePath: '${AppConstant.imageBaseUrl}${berita.fullImageUrl}', // default jika null
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -112,7 +114,7 @@ class _BeritaScreenState extends State<BeritaScreen> {
                                   builder: (_) => NewsDetailScreen(
                                     title: berita.judul,
                                     date: berita.kategori,
-                                    imagePath: berita.fullImageUrl,
+                                    imagePath: '${AppConstant.imageBaseUrl}${berita.fullImageUrl}',
                                     content: berita.content,
                                   ),
                                 ),

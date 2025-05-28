@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/anak.dart';
 import '../models/ortu.dart';
@@ -252,6 +253,10 @@ Future<List<Edukasi>> fetchEdukasi() async {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body)['data'] as List;
+      data.forEach((item) {
+        debugPrint("Judul ${item['judul']}");
+        debugPrint("Image ${item['image_url']}");
+      });
       return data.map((json) => Edukasi.fromJson(json)).toList();
     } else {
       throw Exception('Gagal memuat data edukasi');

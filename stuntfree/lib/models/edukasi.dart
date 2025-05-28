@@ -19,11 +19,13 @@ class Edukasi {
       judul: json['judul'],
       kategori: json['kategori'],
       content: json['content'],
-      imageUrl: json['image'], 
+      imageUrl: json['image_url'], 
     );
   }
 
-  String get fullImageUrl {
-    return 'http://localhost:8000/${imageUrl ?? ""}'; 
-  }
+  String? get fullImageUrl => imageUrl;
+
+  // String get fullImageUrl {
+  //   return 'http://localhost:8000/${imageUrl ?? ""}'; 
+  // }
 }
