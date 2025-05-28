@@ -11,7 +11,6 @@ class Pengukuran {
   final double? bmi;
   final double? zsBmiU;
   final String? statusGiziBmi;
-  final String? note;
   final Map<String, dynamic>? anak;
 
   Pengukuran({
@@ -25,7 +24,6 @@ class Pengukuran {
     this.bmi,
     this.zsBmiU,
     this.statusGiziBmi,
-    this.note,
     this.anak,
   });
 
@@ -41,7 +39,6 @@ class Pengukuran {
       bmi: json['bmi'] != null ? double.tryParse(json['bmi'].toString()) : null,
       zsBmiU: json['zs_bmi_u'] != null ? double.tryParse(json['zs_bmi_u'].toString()) : null,
       statusGiziBmi: json['status_gizi_bmi'],
-      note: json['note'],
       anak: json['anak'],
     );
   }
