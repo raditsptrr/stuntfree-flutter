@@ -339,4 +339,16 @@ Future<bool> updateProfilOrtu({
     }
   }
 
+   Future<List<PaketGizi>> fetchPaketGizi() async {
+    final response = await http.get(Uri.parse('$baseUrl/paketgizi'));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final List list = data['data'];
+      return list.map((json) => PaketGizi.fromJson(json)).toList();
+    } else {
+      throw Exception('Gagal memuat data Paket Gizi');
+    }
+  }
+
 }
