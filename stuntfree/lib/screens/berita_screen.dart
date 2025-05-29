@@ -39,7 +39,8 @@ class _BeritaScreenState extends State<BeritaScreen> {
         ),
         leading: const Padding(
           padding: EdgeInsets.only(left: 16),
-          child: Icon(Icons.person, color: Color(0xFF5D78FD)),
+          // Ganti dengan ikon yang sesuai atau biarkan jika ini disengaja
+          child: Icon(Icons.article_outlined, color: Color(0xFF5D78FD)),
         ),
         actions: const [
           Padding(
@@ -65,7 +66,7 @@ class _BeritaScreenState extends State<BeritaScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
+                    boxShadow: const [ // Sedikit shadow untuk search bar
                       BoxShadow(
                         color: Colors.black12,
                         blurRadius: 4,
@@ -73,8 +74,8 @@ class _BeritaScreenState extends State<BeritaScreen> {
                       ),
                     ],
                   ),
-                  child: TextField(
-                    decoration: const InputDecoration(
+                  child: const TextField(
+                    decoration: InputDecoration(
                       hintText: 'Search',
                       prefixIcon: Icon(Icons.search, color: Colors.grey),
                       border: InputBorder.none,
@@ -94,19 +95,26 @@ class _BeritaScreenState extends State<BeritaScreen> {
                     }
 
                     final beritaList = snapshot.data!;
+                    if (beritaList.isEmpty) {
+                       return const Center(child: Text('Tidak ada berita.'));
+                    }
+
                     return ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       itemCount: beritaList.length,
                       itemBuilder: (context, index) {
                         final berita = beritaList[index];
-                        debugPrint("Image url ${berita.fullImageUrl}");
+                        final imageUrl = berita.fullImageUrl != null
+                            ? '${AppConstant.imageBaseUrl}${berita.fullImageUrl}'
+                            : null;
+
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16),
-                          child: NewsCard(
+                          child: NewsCard( // <-- Gunakan NewsCard yang sudah direvisi
                             title: berita.judul,
                             date: berita.kategori,
                             description: berita.content,
-                            imagePath: '${AppConstant.imageBaseUrl}${berita.fullImageUrl}', // default jika null
+                            imageUrl: imageUrl,
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -114,7 +122,7 @@ class _BeritaScreenState extends State<BeritaScreen> {
                                   builder: (_) => NewsDetailScreen(
                                     title: berita.judul,
                                     date: berita.kategori,
-                                    imagePath: '${AppConstant.imageBaseUrl}${berita.fullImageUrl}',
+                                    imagePath: imageUrl, // Kirim URL atau null
                                     content: berita.content,
                                   ),
                                 ),
@@ -144,12 +152,14 @@ class _BeritaScreenState extends State<BeritaScreen> {
   }
 }
 
-// Update NewsCard untuk bisa load gambar dari network
+// ===================================================
+// REVISI NewsCard agar sama dengan HomeScreen
+// ===================================================
 class NewsCard extends StatelessWidget {
   final String title;
   final String date;
   final String description;
-  final String imagePath;
+  final String? imageUrl;
   final VoidCallback? onTap;
 
   const NewsCard({
@@ -157,68 +167,89 @@ class NewsCard extends StatelessWidget {
     required this.title,
     required this.date,
     required this.description,
-    required this.imagePath,
+    this.imageUrl,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 4,
-              offset: Offset(0, 2),
-            )
-          ],
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: imagePath.isNotEmpty
-                  ? Image.network(
-                      imagePath,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.image_not_supported, size: 80);
-                      },
-                    )
-                  : const Icon(Icons.image, size: 80),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 4),
-                  Text(date,
-                      style:
-                          const TextStyle(color: Colors.grey, fontSize: 12)),
-                  const SizedBox(height: 6),
-                  Text(
-                    description,
-                    style: const TextStyle(fontSize: 13.5),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
+    return Container( // Gunakan Container
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16), // Samakan radius
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          )
+        ],
+      ),
+      child: Material( // Gunakan Material + InkWell
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding( // Tambahkan Padding
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0), // Sudut tumpul semua sisi
+                  child: Container(
+                    width: 80, // Ukuran 80x80
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      color: Colors.grey,
+                    ),
+                    child: imageUrl != null && imageUrl!.isNotEmpty
+                        ? Image.network(
+                            imageUrl!,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(Icons.broken_image, size: 40, color: Colors.white);
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                            },
+                          )
+                        : const Icon(Icons.image, size: 40, color: Colors.white),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 12), // Jarak
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 14), // Ukuran font 14
+                          maxLines: 2, // Batasi judul 2 baris
+                          overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Text(date,
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 12)),
+                      const SizedBox(height: 6),
+                      Text(
+                        description,
+                        style: const TextStyle(fontSize: 12), // Ukuran font 12
+                        maxLines: 2, // Batasi deskripsi jadi 2 baris
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
+// ===================================================

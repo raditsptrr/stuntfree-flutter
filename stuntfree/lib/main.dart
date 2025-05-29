@@ -11,6 +11,7 @@ import 'screens/profile/data_pribadi.dart';
 import 'screens/profile/ubah_password_form.dart';
 import 'screens/data_anak.dart';
 import 'screens/prediksi_page.dart';
+import 'screens/paketgizi.dart';
 void main() {
   runApp(const StuntFreeApp());
 }
@@ -51,6 +52,7 @@ class StuntFreeApp extends StatelessWidget {
         '/data_diri': (context) => const DataDiriForm(),
         '/datapribadi': (context) => DataPribadiPage(),
         '/ubahpassword': (context) => const UbahPasswordPage(),
+        '/paketgizi': (context) => const PaketGiziPage(),
       },
     );
   }

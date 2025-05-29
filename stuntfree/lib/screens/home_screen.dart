@@ -4,6 +4,8 @@ import 'package:stuntfree/widgets/bottom_navbar.dart';
 import 'package:stuntfree/screens/child_detail_screen.dart';
 import 'package:stuntfree/screens/news_detail_screen.dart';
 import '../service/api_service.dart';
+import '../models/edukasi.dart';
+import '../util/app_constant.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Map<String, dynamic>>> _anakFuture;
+  late Future<List<Edukasi>> _beritaFuture;
 
   Future<String?> getNamaOrtu() async {
     final prefs = await SharedPreferences.getInstance();
@@ -24,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _anakFuture = _fetchAnakDiterima();
+    _beritaFuture = ApiService().fetchEdukasi();
   }
 
   Future<List<Map<String, dynamic>>> _fetchAnakDiterima() async {
@@ -31,8 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final idOrtu = prefs.getInt('id_orangtua');
     if (idOrtu == null) return [];
     final data = await ApiService().fetchAnak(idOrtu);
-    // Filter anak yang statusnya diterima
-    return data.where((anak) => anak['status'].toString().toLowerCase() == 'diterima').toList();
+    return data
+        .where((anak) => anak['status'].toString().toLowerCase() == 'diterima')
+        .toList();
   }
 
   @override
@@ -55,9 +60,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header
+                    // Header (Tetap Sama)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
                       child: Row(
                         children: [
                           Expanded(
@@ -67,7 +73,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ShaderMask(
                                   shaderCallback: (Rect bounds) {
                                     return const LinearGradient(
-                                      colors: [Color(0xFF5D78FD), Color(0xFF448AFF)],
+                                      colors: [
+                                        Color(0xFF5D78FD),
+                                        Color(0xFF448AFF)
+                                      ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ).createShader(bounds);
@@ -86,62 +95,28 @@ class _HomeScreenState extends State<HomeScreen> {
                                 FutureBuilder<String?>(
                                   future: getNamaOrtu(),
                                   builder: (context, snapshot) {
-                                    if (snapshot.connectionState == ConnectionState.waiting) {
-                                      return ShaderMask(
-                                        shaderCallback: (Rect bounds) {
-                                          return const LinearGradient(
-                                            colors: [Color(0xFF5D78FD), Color(0xFF448AFF)],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ).createShader(bounds);
-                                        },
-                                        child: const Text(
-                                          "...",
-                                          style: TextStyle(
-                                            fontSize: 32,
-                                            fontWeight: FontWeight.w900,
-                                            color: Colors.white,
-                                          ),
+                                    final namaOrtu =
+                                        snapshot.data ?? 'Nama Tidak Tersedia';
+                                    return ShaderMask(
+                                      shaderCallback: (Rect bounds) {
+                                        return const LinearGradient(
+                                          colors: [
+                                            Color(0xFF5D78FD),
+                                            Color(0xFF448AFF)
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ).createShader(bounds);
+                                      },
+                                      child: Text(
+                                        namaOrtu.toUpperCase(),
+                                        style: const TextStyle(
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
                                         ),
-                                      );
-                                    } else if (snapshot.hasError) {
-                                      return ShaderMask(
-                                        shaderCallback: (Rect bounds) {
-                                          return const LinearGradient(
-                                            colors: [Color(0xFF5D78FD), Color(0xFF448AFF)],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ).createShader(bounds);
-                                        },
-                                        child: const Text(
-                                          "Error",
-                                          style: TextStyle(
-                                            fontSize: 32,
-                                            fontWeight: FontWeight.w900,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      );
-                                    } else {
-                                      final namaOrtu = snapshot.data ?? 'Nama Tidak Tersedia';
-                                      return ShaderMask(
-                                        shaderCallback: (Rect bounds) {
-                                          return const LinearGradient(
-                                            colors: [Color(0xFF5D78FD), Color(0xFF448AFF)],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ).createShader(bounds);
-                                        },
-                                        child: Text(
-                                          namaOrtu.toUpperCase(),
-                                          style: const TextStyle(
-                                            fontSize: 32,
-                                            fontWeight: FontWeight.w900,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      );
-                                    }
+                                      ),
+                                    );
                                   },
                                 ),
                               ],
@@ -156,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
 
-                    // Search bar
+                    // Search bar (Tetap Sama)
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: TextField(
@@ -167,7 +142,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           fillColor: Colors.white,
                           contentPadding: EdgeInsets.symmetric(vertical: 0),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(30)),
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(30)),
                             borderSide: BorderSide.none,
                           ),
                         ),
@@ -176,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 16),
 
-                    // Info Card List dari API (dengan hasil model)
+                    // Info Card List (Tetap Sama)
                     Padding(
                       padding: const EdgeInsets.only(left: 16),
                       child: SizedBox(
@@ -184,30 +160,36 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: FutureBuilder<List<Map<String, dynamic>>>(
                           future: _anakFuture,
                           builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(child: CircularProgressIndicator());
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
                             } else if (snapshot.hasError) {
-                              return const Center(child: Text('Gagal memuat data anak'));
-                            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                              return const Center(child: Text('Tidak ada anak yang diterima'));
+                              return const Center(
+                                  child: Text('Gagal memuat data anak'));
+                            } else if (!snapshot.hasData ||
+                                snapshot.data!.isEmpty) {
+                              return const Center(
+                                  child: Text('Tidak ada anak yang diterima'));
                             } else {
                               final anakList = snapshot.data!;
                               return ListView.separated(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: anakList.length,
-                                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(width: 8),
                                 itemBuilder: (context, index) {
                                   final anak = anakList[index];
-
-                                  // Ambil hasil model dari data API dengan key 'hasil'
-                                  final hasilModel = anak['hasil'] ?? 'Tidak Ada Data';
+                                  final hasilModel =
+                                      anak['hasil'] ?? 'Tidak Ada Data';
 
                                   return GestureDetector(
                                     onTap: () {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => const ChildDetailScreen(),
+                                          builder: (_) =>
+                                              ChildDetailScreen(anakData: anak),
                                         ),
                                       );
                                     },
@@ -221,13 +203,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                       weight: anak['berat']?.round() ?? 0,
                                       age: anak['usia_bulan']?.round() ?? 0,
                                       height: anak['tinggi']?.round() ?? 0,
-                                      score: double.tryParse(anak['z_score']?.toString() ?? '0') ?? 0.0,
+                                      score: double.tryParse(
+                                              anak['z_score']?.toString() ??
+                                                  '0') ??
+                                          0.0,
                                       color: const Color(0xFF5D78FD),
-                                      modelResult: hasilModel,  // pakai key 'hasil' dari API
+                                      modelResult: hasilModel,
                                     ),
                                   );
                                 },
-
                               );
                             }
                           },
@@ -236,16 +220,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
 
                     const SizedBox(height: 20),
+                    // Teman Sehat Anak (Tetap Sama)
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Text("Teman Sehat Anak",
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(height: 12),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Row(
-                        children: const [
+                        children: [
                           Expanded(
                             child: CategoryCard(
                               title: 'Pediatrics',
@@ -253,52 +239,84 @@ class _HomeScreenState extends State<HomeScreen> {
                               color: Colors.red,
                             ),
                           ),
-                          SizedBox(width: 16),
+                          const SizedBox(width: 16),
                           Expanded(
-                            child: CategoryCard(
-                              title: 'Cardiology',
-                              icon: Icons.favorite,
-                              color: Color(0xFF5D78FD),
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.pushNamed(context, '/paketgizi');
+                              },
+                              child: const CategoryCard(
+                                title: 'Paket Gizi',
+                                icon: Icons.restaurant,
+                                color: Color(0xFF5D78FD),
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 24),
+                    // Terbaru (Tetap Sama)
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Text("Terbaru",
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(height: 12),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        children: [
-                          NewsCard(
-                            title:
-                                "Pemerintah Terus Gencarkan Upaya Penanggulangan Stunting di Indonesia",
-                            date: "10 May 2025",
-                            description:
-                                "Stunting masih menjadi tantangan serius dalam pembangunan sumber daya manusia di Indonesia.",
-                            imagePath: 'assets/images/3.jpg',
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => NewsDetailScreen(
-                                    title:
-                                        "Pemerintah Terus Gencarkan Upaya Penanggulangan Stunting di Indonesia",
-                                    date: "10 May 2025",
-                                    imagePath: 'assets/images/3.jpg',
-                                    content:
-                                        "Stunting masih menjadi tantangan serius dalam pembangunan sumber daya manusia di Indonesia. [...]",
+                      child: FutureBuilder<List<Edukasi>>(
+                        future: _beritaFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          } else if (snapshot.hasError) {
+                            return Center(
+                                child: Text(
+                                    'Gagal memuat berita: ${snapshot.error}'));
+                          } else if (!snapshot.hasData ||
+                              snapshot.data!.isEmpty) {
+                            return const Center(
+                                child: Text('Tidak ada berita terbaru.'));
+                          } else {
+                            final allBerita = snapshot.data!;
+                            final latestBerita = allBerita.take(3).toList();
+                            return Column(
+                              children: latestBerita.map((berita) {
+                                // Gunakan NetworkNewsCard yang sudah direvisi
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12.0),
+                                  child: NetworkNewsCard( // <-- Pastikan ini memanggil NetworkNewsCard yang baru
+                                    title: berita.judul,
+                                    date: berita.kategori,
+                                    description: berita.content,
+                                    imageUrl: berita.fullImageUrl != null
+                                        ? '${AppConstant.imageBaseUrl}${berita.fullImageUrl}'
+                                        : null,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => NewsDetailScreen(
+                                            title: berita.judul,
+                                            date: berita.kategori,
+                                            imagePath: berita.fullImageUrl != null
+                                                ? '${AppConstant.imageBaseUrl}${berita.fullImageUrl!}'
+                                                : null,
+                                            content: berita.content,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
+                                );
+                              }).toList(),
+                            );
+                          }
+                        },
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -308,7 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // BottomNavBar
+          // BottomNavBar (Tetap Sama)
           Align(
             alignment: Alignment.bottomCenter,
             child: BottomNavBar(
@@ -327,7 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Modifikasi InfoCard supaya bisa menerima hasil model
+// InfoCard (Tetap Sama)
 class InfoCard extends StatelessWidget {
   final String name;
   final String gender;
@@ -336,8 +354,6 @@ class InfoCard extends StatelessWidget {
   final int height;
   final double score;
   final Color color;
-
-  // Tambahan untuk hasil model prediksi
   final String? modelResult;
 
   const InfoCard({
@@ -356,7 +372,7 @@ class InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 160,
-      height: 155, // tambah tinggi sedikit untuk hasil model
+      height: 155,
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
@@ -383,7 +399,8 @@ class InfoCard extends StatelessWidget {
             children: [
               const Icon(Icons.male, color: Colors.white, size: 14),
               const SizedBox(width: 4),
-              Text(gender, style: const TextStyle(color: Colors.white, fontSize: 12)),
+              Text(gender,
+                  style: const TextStyle(color: Colors.white, fontSize: 12)),
             ],
           ),
           const SizedBox(height: 2),
@@ -391,7 +408,8 @@ class InfoCard extends StatelessWidget {
             children: [
               const Icon(Icons.monitor_weight, color: Colors.white, size: 14),
               const SizedBox(width: 4),
-              Text("$weight Kg", style: const TextStyle(color: Colors.white, fontSize: 12)),
+              Text("$weight Kg",
+                  style: const TextStyle(color: Colors.white, fontSize: 12)),
             ],
           ),
           const SizedBox(height: 2),
@@ -399,12 +417,11 @@ class InfoCard extends StatelessWidget {
             children: [
               const Icon(Icons.calendar_today, color: Colors.white, size: 14),
               const SizedBox(width: 4),
-              Text("$age Bulan • $height cm", style: const TextStyle(color: Colors.white, fontSize: 12)),
+              Text("$age Bulan • $height cm",
+                  style: const TextStyle(color: Colors.white, fontSize: 12)),
             ],
           ),
           const Spacer(),
-
-          // Tampilkan score dan hasil model di bawah
           if (modelResult != null) ...[
             Text(
               'Prediksi: $modelResult',
@@ -416,7 +433,6 @@ class InfoCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
           ],
-
           Align(
             alignment: Alignment.bottomRight,
             child: Text(
@@ -434,13 +450,17 @@ class InfoCard extends StatelessWidget {
   }
 }
 
-// Kelas CategoryCard dan NewsCard tetap sama seperti sebelumnya
+// CategoryCard (Tetap Sama)
 class CategoryCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final Color color;
 
-  const CategoryCard({super.key, required this.title, required this.icon, required this.color});
+  const CategoryCard(
+      {super.key,
+      required this.title,
+      required this.icon,
+      required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -468,7 +488,8 @@ class CategoryCard extends StatelessWidget {
             Icon(icon, size: 38, color: Colors.white),
             const SizedBox(height: 8),
             Text(title,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
           ],
         ),
       ),
@@ -476,65 +497,98 @@ class CategoryCard extends StatelessWidget {
   }
 }
 
-class NewsCard extends StatelessWidget {
+
+// NetworkNewsCard (REVISI - Menggunakan Container + Padding)
+class NetworkNewsCard extends StatelessWidget {
   final String title;
   final String date;
   final String description;
-  final String imagePath;
+  final String? imageUrl;
   final VoidCallback onTap;
 
-  const NewsCard({
+  const NetworkNewsCard({
     super.key,
     required this.title,
     required this.date,
     required this.description,
-    required this.imagePath,
+    this.imageUrl,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.hardEdge,
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        onTap: onTap,
-        child: Row(
-          children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                    image: AssetImage(imagePath), fit: BoxFit.cover),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 14)),
-                    const SizedBox(height: 4),
-                    Text(date,
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.grey)),
-                    const SizedBox(height: 6),
-                    Text(description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12)),
-                  ],
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          )
+        ],
+      ),
+      child: Material( // Untuk efek InkWell dan clipping
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding( // <-- Tambahkan Padding di sini
+            padding: const EdgeInsets.all(12.0), // Padding 12 di semua sisi
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0), // Sudut tumpul semua sisi
+                  child: Container(
+                    width: 80, // Ukuran gambar 80x80
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      color: Colors.grey,
+                    ),
+                    child: imageUrl != null && imageUrl!.isNotEmpty
+                        ? Image.network(
+                            imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(Icons.broken_image,
+                                  size: 40, color: Colors.white); // Perkecil ikon
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const Center(
+                                  child: CircularProgressIndicator(strokeWidth: 2));
+                            },
+                          )
+                        : const Icon(Icons.image, size: 40, color: Colors.white), // Perkecil ikon
+                  ),
                 ),
-              ),
-            )
-          ],
+                const SizedBox(width: 12), // Jarak antara gambar dan teks
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 14)),
+                      const SizedBox(height: 4),
+                      Text(date,
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.grey)),
+                      const SizedBox(height: 6),
+                      Text(description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
