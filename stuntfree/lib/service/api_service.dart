@@ -278,15 +278,65 @@ class ApiService {
     }
   }
 
-  Future<List<PaketGizi>> fetchPaketGizi() async {
-    final response = await http.get(Uri.parse('$baseUrl/paketgizi'));
+  // profile
+Future<Ortu?> fetchProfilOrtu() async {
+    final prefs = await SharedPreferences.getInstance();
+    final idOrtu = prefs.getInt('id_orangtua');
+
+    if (idOrtu == null) {
+      throw Exception('ID orang tua tidak ditemukan di SharedPreferences.');
+    }
+
+    final url = Uri.parse('$baseUrl/ortu/$idOrtu');
+    final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final List list = data['data'];
-      return list.map((json) => PaketGizi.fromJson(json)).toList();
+      final responseData = json.decode(response.body);
+      if (responseData['status'] == true) {
+        return Ortu.fromJson(responseData['data']);
+      } else {
+        throw Exception('Gagal memuat data profil');
+      }
     } else {
-      throw Exception('Gagal memuat data Paket Gizi');
+      throw Exception('Gagal mengambil data profil, status: ${response.statusCode}');
+    }
+}
+
+// update ortu 
+Future<bool> updateProfilOrtu({
+    required int id,
+    required String nama,
+    required String email,
+    required String alamat,
+    required int idKecamatan,
+  }) async {
+    final url = Uri.parse('$baseUrl/ortu/$id');
+
+    final body = {
+      'nama': nama,
+      'email': email,
+      'alamat': alamat,
+      'id_kecamatan': idKecamatan.toString(),
+    };
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        // Asumsi API mengembalikan status sukses
+        return true;
+      } else {
+        print('❌ Gagal update data, status: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('❌ Error updateProfilOrtu: $e');
+      return false;
     }
   }
+
 }

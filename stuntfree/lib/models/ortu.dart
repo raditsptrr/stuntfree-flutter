@@ -4,6 +4,7 @@ class Ortu {
   final String email;
   final int idKecamatan;
   final String alamat;
+  final String? namaKecamatan;
 
   Ortu({
     required this.id,
@@ -11,6 +12,7 @@ class Ortu {
     required this.email,
     required this.idKecamatan,
     required this.alamat,
+    this.namaKecamatan,
   });
 
   factory Ortu.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class Ortu {
       email: json['email'],
       idKecamatan: json['id_kecamatan'],
       alamat: json['alamat'],
+      namaKecamatan: json['kecamatan']?['nama'],
     );
   }
 }
