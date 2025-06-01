@@ -159,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         height: 155,
                         child: FutureBuilder<List<Map<String, dynamic>>>(
                           future: _anakFuture,
-                          builder: (context, snapshot) {
+                          builder: (context, snapshot) { 
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {
                               return const Center(
@@ -233,11 +233,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         children: [
                           Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.pushNamed(context, '/faskes');
+                              },
+                            
                             child: CategoryCard(
-                              title: 'Pediatrics',
+                              title: 'Fasilitas Kesehatan',
                               icon: Icons.child_care,
                               color: Colors.red,
                             ),
+                           ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(

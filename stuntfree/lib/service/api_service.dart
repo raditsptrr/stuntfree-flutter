@@ -7,8 +7,8 @@ import '../models/kecamatan.dart';
 import '../models/paket_gizi.dart';
 import '../models/pengukuran_model.dart';
 import '../models/edukasi.dart';
+import '../models/faskes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 
 class ApiService {
   final String baseUrl = 'http://127.0.0.1:8000/api';
@@ -46,7 +46,8 @@ class ApiService {
           anak['hasil'] = latest.hasil;
           anak['berat'] = latest.berat;
           anak['tinggi'] = latest.tinggi;
-          anak['tanggal_lahir'] = anak['tanggal_lahir']; // Pastikan tanggal lahir ada
+          anak['tanggal_lahir'] =
+              anak['tanggal_lahir']; // Pastikan tanggal lahir ada
         }
       }
 
@@ -184,7 +185,6 @@ class ApiService {
     }
   }
 
-
   // Ambil semua data pengukuran (tetap ada jika diperlukan di tempat lain)
   Future<List<Pengukuran>> fetchPengukuran() async {
     final url = Uri.parse('$baseUrl/pengukuran');
@@ -211,10 +211,12 @@ class ApiService {
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
       final List list = responseData['data'];
-      List<Pengukuran> allPengukuran = list.map((item) => Pengukuran.fromJson(item)).toList();
+      List<Pengukuran> allPengukuran =
+          list.map((item) => Pengukuran.fromJson(item)).toList();
 
       // Filter berdasarkan idAnak
-      List<Pengukuran> filtered = allPengukuran.where((p) => p.idAnak == idAnak).toList();
+      List<Pengukuran> filtered =
+          allPengukuran.where((p) => p.idAnak == idAnak).toList();
 
       // Urutkan berdasarkan usia_bulan untuk grafik
       filtered.sort((a, b) => a.usiaBulan.compareTo(b.usiaBulan));
@@ -279,7 +281,7 @@ class ApiService {
   }
 
   // profile
-Future<Ortu?> fetchProfilOrtu() async {
+  Future<Ortu?> fetchProfilOrtu() async {
     final prefs = await SharedPreferences.getInstance();
     final idOrtu = prefs.getInt('id_orangtua');
 
@@ -298,12 +300,13 @@ Future<Ortu?> fetchProfilOrtu() async {
         throw Exception('Gagal memuat data profil');
       }
     } else {
-      throw Exception('Gagal mengambil data profil, status: ${response.statusCode}');
+      throw Exception(
+          'Gagal mengambil data profil, status: ${response.statusCode}');
     }
-}
+  }
 
-// update ortu 
-Future<bool> updateProfilOrtu({
+// update ortu
+  Future<bool> updateProfilOrtu({
     required int id,
     required String nama,
     required String email,
@@ -330,16 +333,16 @@ Future<bool> updateProfilOrtu({
         // Asumsi API mengembalikan status sukses
         return true;
       } else {
-        print('❌ Gagal update data, status: ${response.statusCode}');
+        print(' Gagal update data, status: ${response.statusCode}');
         return false;
       }
     } catch (e) {
-      print('❌ Error updateProfilOrtu: $e');
+      print(' Error updateProfilOrtu: $e');
       return false;
     }
   }
 
-   Future<List<PaketGizi>> fetchPaketGizi() async {
+  Future<List<PaketGizi>> fetchPaketGizi() async {
     final response = await http.get(Uri.parse('$baseUrl/paketgizi'));
 
     if (response.statusCode == 200) {
@@ -351,4 +354,26 @@ Future<bool> updateProfilOrtu({
     }
   }
 
+  // faskes
+  Future<List<Faskes>> fetchFaskes({int? idKecamatan}) async {
+    try {
+      final uri = Uri.parse('$baseUrl/faskes').replace(
+          queryParameters: idKecamatan != null
+              ? {'id_kecamatan': idKecamatan.toString()}
+              : null);
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        List<dynamic> data = body['data'];
+
+        return data.map((item) => Faskes.fromJson(item)).toList();
+      } else {
+        throw Exception('Gagal mengambil data faskes');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+  
 }

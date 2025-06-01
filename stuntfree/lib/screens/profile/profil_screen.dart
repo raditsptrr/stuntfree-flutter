@@ -1,8 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stuntfree/widgets/bottom_navbar.dart';
 
-class ProfilPage extends StatelessWidget {
+class ProfilPage extends StatefulWidget {
   const ProfilPage({super.key});
+
+  @override
+  State<ProfilPage> createState() => _ProfilPageState();
+}
+
+class _ProfilPageState extends State<ProfilPage> {
+  String _userName = 'Memuat...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? name = prefs.getString('nama_ortu'); // <- gunakan key yang benar!
+    setState(() {
+      _userName = name ?? 'Nama Tidak Ditemukan';
+    });
+  }
+
+  Future<void> _logout() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Hapus semua data login
+    if (mounted) {
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,9 +74,9 @@ class ProfilPage extends StatelessWidget {
             child: Icon(Icons.person, size: 50, color: Colors.white),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Fahzila Raul',
-            style: TextStyle(
+          Text(
+            _userName,
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Color(0xFF007AFF),
@@ -92,6 +122,13 @@ class ProfilPage extends StatelessWidget {
                         Icons.info_outline,
                         'Tentang Aplikasi',
                         onTap: () => Navigator.pushNamed(context, '/tentangaplikasi'),
+                      ),
+                      _buildDivider(),
+                      _buildListItem(
+                        context,
+                        Icons.logout,
+                        'Logout',
+                        onTap: _logout,
                       ),
                     ],
                   ),

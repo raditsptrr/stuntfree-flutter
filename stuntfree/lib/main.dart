@@ -12,6 +12,8 @@ import 'screens/profile/ubah_password_form.dart';
 import 'screens/data_anak.dart';
 import 'screens/prediksi_page.dart';
 import 'screens/paketgizi.dart';
+import 'screens/faskes_page.dart';
+
 void main() {
   runApp(const StuntFreeApp());
 }
@@ -25,18 +27,18 @@ class StuntFreeApp extends StatelessWidget {
       title: 'StuntFree',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-      fontFamily: 'Inter',
-      useMaterial3: true,
-      primaryColor: const Color(0xFF5D78FD),
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF5D78FD),
-        brightness: Brightness.light,
-      ),
-      textSelectionTheme: const TextSelectionThemeData(
-        cursorColor: Color(0xFF5D78FD),         // 🔵 kursor
-        selectionColor: Color(0x555D78FD), // 🔵 highlight semi transparan
-        selectionHandleColor: Color(0xFF5D78FD), // 🔵 bulatan handle
-      ),
+        fontFamily: 'Inter',
+        useMaterial3: true,
+        primaryColor: const Color(0xFF5D78FD),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF5D78FD),
+          brightness: Brightness.light,
+        ),
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: Color(0xFF5D78FD), // 🔵 kursor
+          selectionColor: Color(0x555D78FD), // 🔵 highlight semi transparan
+          selectionHandleColor: Color(0xFF5D78FD), // 🔵 bulatan handle
+        ),
       ),
       home: const OnboardingPage(),
       routes: {
@@ -53,6 +55,7 @@ class StuntFreeApp extends StatelessWidget {
         '/datapribadi': (context) => DataPribadiPage(),
         '/ubahpassword': (context) => const UbahPasswordPage(),
         '/paketgizi': (context) => const PaketGiziPage(),
+        '/faskes' : (context) => const FaskesPage(),
       },
     );
   }
