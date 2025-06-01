@@ -375,5 +375,37 @@ class ApiService {
       throw Exception('Error: $e');
     }
   }
+
+  // ubah password
+
+  Future<Map<String, dynamic>> ubahPassword({
+    required int id,
+    required String lama,
+    required String baru,
+  }) async {
+    final url = Uri.parse('$baseUrl/ortu/$id/update-password');
+
+    final response = await http.put(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'old_password': lama,
+        'new_password': baru,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return {
+        'success': data['status'] ?? false,
+        'message': data['message'] ?? 'Tidak ada pesan dari server',
+      };
+    } else {
+      return {
+        'success': false,
+        'message': 'Gagal menghubungi server. Status code: ${response.statusCode}',
+      };
+    }
+  }
   
 }
