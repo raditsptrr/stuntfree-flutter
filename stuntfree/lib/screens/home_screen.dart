@@ -17,6 +17,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Map<String, dynamic>>> _anakFuture;
   late Future<List<Edukasi>> _beritaFuture;
+  List<Map<String, dynamic>> _allAnak = [];
+  List<Map<String, dynamic>> _filteredAnak = [];
+  bool _loading = true;
+  final TextEditingController _searchController = TextEditingController();
 
   Future<String?> getNamaOrtu() async {
     final prefs = await SharedPreferences.getInstance();
@@ -28,6 +32,40 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _anakFuture = _fetchAnakDiterima();
     _beritaFuture = ApiService().fetchEdukasi();
+    _loadAnakDiterima();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  // load
+  Future<void> _loadAnakDiterima() async {
+    final prefs = await SharedPreferences.getInstance();
+    final idOrtu = prefs.getInt('id_orangtua');
+    if (idOrtu == null) {
+      setState(() {
+        _allAnak = [];
+        _filteredAnak = [];
+        _loading = false;
+      });
+      return;
+    }
+    final data = await ApiService().fetchAnak(idOrtu);
+    final anakDiterima = data.where((anak) => anak['status'].toString().toLowerCase() == 'diterima').toList();
+    setState(() {
+      _allAnak = anakDiterima;
+      _filteredAnak = anakDiterima;
+      _loading = false;
+    });
+  }
+
+  // search 
+  void _onSearchChanged() {
+    final keyword = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredAnak = _allAnak.where((anak) {
+        final nama = (anak['nama'] ?? '').toString().toLowerCase();
+        return nama.contains(keyword);
+      }).toList();
+    });
   }
 
   Future<List<Map<String, dynamic>>> _fetchAnakDiterima() async {
@@ -38,6 +76,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return data
         .where((anak) => anak['status'].toString().toLowerCase() == 'diterima')
         .toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -132,9 +176,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
 
                     // Search bar (Tetap Sama)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: TextField(
+                        controller: _searchController,
                         decoration: InputDecoration(
                           hintText: 'Search',
                           prefixIcon: Icon(Icons.search),
@@ -152,74 +197,56 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 16),
 
+                    // 
+
                     // Info Card List (Tetap Sama)
                     Padding(
                       padding: const EdgeInsets.only(left: 16),
                       child: SizedBox(
                         height: 155,
-                        child: FutureBuilder<List<Map<String, dynamic>>>(
-                          future: _anakFuture,
-                          builder: (context, snapshot) { 
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            } else if (snapshot.hasError) {
-                              return const Center(
-                                  child: Text('Gagal memuat data anak'));
-                            } else if (!snapshot.hasData ||
-                                snapshot.data!.isEmpty) {
-                              return const Center(
-                                  child: Text('Tidak ada anak yang diterima'));
-                            } else {
-                              final anakList = snapshot.data!;
-                              return ListView.separated(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: anakList.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(width: 8),
-                                itemBuilder: (context, index) {
-                                  final anak = anakList[index];
-                                  final hasilModel =
-                                      anak['hasil'] ?? 'Tidak Ada Data';
+                        child: _loading
+                            ? const Center(child: CircularProgressIndicator())
+                            : _filteredAnak.isEmpty
+                                ? const Center(child: Text('Tidak ada anak yang sesuai pencarian'))
+                                : ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: _filteredAnak.length,
+                                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                    itemBuilder: (context, index) {
+                                      final anak = _filteredAnak[index];
+                                      final hasilModel = anak['hasil'] ?? 'Tidak Ada Data';
 
-                                  return GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              ChildDetailScreen(anakData: anak),
+                                      return GestureDetector(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => ChildDetailScreen(anakData: anak),
+                                            ),
+                                          );
+                                        },
+                                        child: InfoCard(
+                                          name: anak['nama'] ?? '-',
+                                          gender: anak['jenis_kelamin'] == 1
+                                              ? 'Laki-laki'
+                                              : anak['jenis_kelamin'] == 0
+                                                  ? 'Perempuan'
+                                                  : '-',
+                                          weight: anak['berat']?.round() ?? 0,
+                                          age: anak['usia_bulan']?.round() ?? 0,
+                                          height: anak['tinggi']?.round() ?? 0,
+                                          score: double.tryParse(anak['z_score']?.toString() ?? '0') ?? 0.0,
+                                          color: const Color(0xFF5D78FD),
+                                          modelResult: hasilModel,
                                         ),
                                       );
                                     },
-                                    child: InfoCard(
-                                      name: anak['nama'] ?? '-',
-                                      gender: anak['jenis_kelamin'] == 1
-                                          ? 'Laki-laki'
-                                          : anak['jenis_kelamin'] == 0
-                                              ? 'Perempuan'
-                                              : '-',
-                                      weight: anak['berat']?.round() ?? 0,
-                                      age: anak['usia_bulan']?.round() ?? 0,
-                                      height: anak['tinggi']?.round() ?? 0,
-                                      score: double.tryParse(
-                                              anak['z_score']?.toString() ??
-                                                  '0') ??
-                                          0.0,
-                                      color: const Color(0xFF5D78FD),
-                                      modelResult: hasilModel,
-                                    ),
-                                  );
-                                },
-                              );
-                            }
-                          },
-                        ),
+                                  ),
                       ),
                     ),
 
                     const SizedBox(height: 20),
+
                     // Teman Sehat Anak (Tetap Sama)
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
