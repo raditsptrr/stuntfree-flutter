@@ -14,11 +14,33 @@ class BeritaScreen extends StatefulWidget {
 
 class _BeritaScreenState extends State<BeritaScreen> {
   late Future<List<Edukasi>> _beritaFuture;
+  List<Edukasi> _allBerita = [];
+  List<Edukasi> _filteredBerita = [];
+
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _beritaFuture = ApiService().fetchEdukasi();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    final keyword = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredBerita = _allBerita.where((berita) {
+        return berita.judul.toLowerCase().contains(keyword) ||
+               berita.kategori.toLowerCase().contains(keyword) ||
+               berita.content.toLowerCase().contains(keyword);
+      }).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -39,7 +61,6 @@ class _BeritaScreenState extends State<BeritaScreen> {
         ),
         leading: const Padding(
           padding: EdgeInsets.only(left: 16),
-          // Ganti dengan ikon yang sesuai atau biarkan jika ini disengaja
           child: Icon(Icons.article_outlined, color: Color(0xFF5D78FD)),
         ),
         actions: const [
@@ -66,7 +87,7 @@ class _BeritaScreenState extends State<BeritaScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
-                    boxShadow: const [ // Sedikit shadow untuk search bar
+                    boxShadow: const [
                       BoxShadow(
                         color: Colors.black12,
                         blurRadius: 4,
@@ -74,9 +95,10 @@ class _BeritaScreenState extends State<BeritaScreen> {
                       ),
                     ],
                   ),
-                  child: const TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Search',
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: const InputDecoration(
+                      hintText: 'Cari berita...',
                       prefixIcon: Icon(Icons.search, color: Colors.grey),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(vertical: 14),
@@ -94,23 +116,27 @@ class _BeritaScreenState extends State<BeritaScreen> {
                       return Center(child: Text('Error: ${snapshot.error}'));
                     }
 
-                    final beritaList = snapshot.data!;
-                    if (beritaList.isEmpty) {
-                       return const Center(child: Text('Tidak ada berita.'));
+                    _allBerita = snapshot.data!;
+                    _filteredBerita = _searchController.text.isEmpty
+                        ? _allBerita
+                        : _filteredBerita;
+
+                    if (_filteredBerita.isEmpty) {
+                      return const Center(child: Text('Tidak ada berita ditemukan.'));
                     }
 
                     return ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: beritaList.length,
+                      itemCount: _filteredBerita.length,
                       itemBuilder: (context, index) {
-                        final berita = beritaList[index];
+                        final berita = _filteredBerita[index];
                         final imageUrl = berita.fullImageUrl != null
                             ? '${AppConstant.imageBaseUrl}${berita.fullImageUrl}'
                             : null;
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16),
-                          child: NewsCard( // <-- Gunakan NewsCard yang sudah direvisi
+                          child: NewsCard(
                             title: berita.judul,
                             date: berita.kategori,
                             description: berita.content,
@@ -122,7 +148,7 @@ class _BeritaScreenState extends State<BeritaScreen> {
                                   builder: (_) => NewsDetailScreen(
                                     title: berita.judul,
                                     date: berita.kategori,
-                                    imagePath: imageUrl, // Kirim URL atau null
+                                    imagePath: imageUrl,
                                     content: berita.content,
                                   ),
                                 ),
@@ -152,9 +178,9 @@ class _BeritaScreenState extends State<BeritaScreen> {
   }
 }
 
-// ===================================================
-// REVISI NewsCard agar sama dengan HomeScreen
-// ===================================================
+// ==============================
+// NewsCard Widget (tidak berubah dari revisimu sebelumnya)
+// ==============================
 class NewsCard extends StatelessWidget {
   final String title;
   final String date;
@@ -173,10 +199,10 @@ class NewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container( // Gunakan Container
+    return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16), // Samakan radius
+        borderRadius: BorderRadius.circular(16),
         boxShadow: const [
           BoxShadow(
             color: Colors.black12,
@@ -185,24 +211,22 @@ class NewsCard extends StatelessWidget {
           )
         ],
       ),
-      child: Material( // Gunakan Material + InkWell
+      child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: onTap,
-          child: Padding( // Tambahkan Padding
+          child: Padding(
             padding: const EdgeInsets.all(12.0),
             child: Row(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0), // Sudut tumpul semua sisi
+                  borderRadius: BorderRadius.circular(12.0),
                   child: Container(
-                    width: 80, // Ukuran 80x80
+                    width: 80,
                     height: 80,
-                    decoration: const BoxDecoration(
-                      color: Colors.grey,
-                    ),
+                    decoration: const BoxDecoration(color: Colors.grey),
                     child: imageUrl != null && imageUrl!.isNotEmpty
                         ? Image.network(
                             imageUrl!,
@@ -220,15 +244,15 @@ class NewsCard extends StatelessWidget {
                         : const Icon(Icons.image, size: 40, color: Colors.white),
                   ),
                 ),
-                const SizedBox(width: 12), // Jarak
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(title,
                           style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 14), // Ukuran font 14
-                          maxLines: 2, // Batasi judul 2 baris
+                              fontWeight: FontWeight.bold, fontSize: 14),
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 4),
                       Text(date,
@@ -237,8 +261,8 @@ class NewsCard extends StatelessWidget {
                       const SizedBox(height: 6),
                       Text(
                         description,
-                        style: const TextStyle(fontSize: 12), // Ukuran font 12
-                        maxLines: 2, // Batasi deskripsi jadi 2 baris
+                        style: const TextStyle(fontSize: 12),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -252,4 +276,3 @@ class NewsCard extends StatelessWidget {
     );
   }
 }
-// ===================================================
