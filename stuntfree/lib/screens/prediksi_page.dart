@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../service/api_service.dart'; // Pastikan path ini sesuai
+import '../service/api_service.dart';
 
 class PrediksiPage extends StatefulWidget {
   const PrediksiPage({super.key});
@@ -17,13 +17,13 @@ class _PrediksiPageState extends State<PrediksiPage> {
   late int idAnak;
   late String namaAnak;
 
-  // tambahan untuk mode edit dan data lama
   bool isEditMode = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final arguments = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final arguments =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     idAnak = arguments['idAnak'];
     namaAnak = arguments['nama'];
 
@@ -31,7 +31,6 @@ class _PrediksiPageState extends State<PrediksiPage> {
         arguments.containsKey('berat') &&
         arguments.containsKey('tinggi')) {
       isEditMode = true;
-      // Isi controller dengan data lama
       _umurController.text = arguments['umur']?.toString() ?? '';
       _beratController.text = arguments['berat']?.toString() ?? '';
       _tinggiController.text = arguments['tinggi']?.toString() ?? '';
@@ -63,7 +62,6 @@ class _PrediksiPageState extends State<PrediksiPage> {
       final double berat = double.parse(beratText);
       final double tinggi = double.parse(tinggiText);
 
-      // Kirim data sebagai record baru selalu
       final result = await ApiService().submitPengukuran(
         idAnak: idAnak,
         berat: berat,
@@ -85,9 +83,9 @@ class _PrediksiPageState extends State<PrediksiPage> {
     }
   }
 
-
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _showCancelConfirmation() {
@@ -95,7 +93,8 @@ class _PrediksiPageState extends State<PrediksiPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Konfirmasi'),
-        content: const Text('Apakah Anda yakin ingin membatalkan pengisian form?'),
+        content:
+            const Text('Apakah Anda yakin ingin membatalkan pengisian form?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -106,7 +105,9 @@ class _PrediksiPageState extends State<PrediksiPage> {
               Navigator.pop(context);
               Navigator.pushReplacementNamed(context, '/dataanak');
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5D78FD)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5D78FD),
+            ),
             child: const Text('Ya', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -117,7 +118,10 @@ class _PrediksiPageState extends State<PrediksiPage> {
   Widget _buildFieldLabel(String text) {
     return Text(
       text,
-      style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF5D78FD)),
+      style: const TextStyle(
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF5D78FD),
+      ),
     );
   }
 
@@ -144,97 +148,151 @@ class _PrediksiPageState extends State<PrediksiPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ... appBar sama seperti sebelumnya ...
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(maxWidth: 500),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                ),
-              ],
+      backgroundColor: const Color(0xFFF8FAFF),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header tanpa AppBar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Color(0xFF5D78FD)),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Spacer(),
+                  const Text(
+                    'Tambah Data',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF5D78FD),
+                    ),
+                  ),
+                  const Spacer(flex: 2),
+                ],
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Silahkan masukan data untuk prediksi',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF5D78FD),
+
+            // Konten Tengah
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.9,
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Silahkan masukkan data untuk prediksi',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF5D78FD),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Masukkan umur, tinggi badan, dan berat badan agar mengetahui prediksi tumbuh kembang anak',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        const SizedBox(height: 24),
+
+                        _buildFieldLabel('Nama Anak'),
+                        const SizedBox(height: 6),
+                        DropdownButtonFormField<String>(
+                          value: namaAnak,
+                          items: [
+                            DropdownMenuItem(
+                              value: namaAnak,
+                              child: Text(namaAnak),
+                            ),
+                          ],
+                          onChanged: null,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: const Color(0xFFF2F2F2),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding:
+                                const EdgeInsets.symmetric(horizontal: 16),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+                        _buildFieldLabel('Umur (bulan)'),
+                        _buildTextField(_umurController, 'Masukkan umur dalam bulan'),
+                        const SizedBox(height: 16),
+                        _buildFieldLabel('Berat Badan (kg)'),
+                        _buildTextField(_beratController, 'Masukkan berat badan'),
+                        const SizedBox(height: 16),
+                        _buildFieldLabel('Tinggi Badan (cm)'),
+                        _buildTextField(_tinggiController, 'Masukkan tinggi badan'),
+                        const SizedBox(height: 24),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: _showCancelConfirmation,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.redAccent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                                child: const Text(
+                                  'Batal',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _submitPrediksi,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF5D78FD),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                                child: _isLoading
+                                    ? const CircularProgressIndicator(color: Colors.white)
+                                    : Text(
+                                        isEditMode ? 'Update' : 'Prediksi',
+                                        style: const TextStyle(color: Colors.white),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                // ... penjelasan tetap sama ...
-                const SizedBox(height: 24),
-
-                _buildFieldLabel('Nama Anak'),
-                Text(
-                  namaAnak,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 16),
-
-                _buildFieldLabel('Umur (bulan)'),
-                _buildTextField(_umurController, 'Masukkan umur dalam bulan'),
-                const SizedBox(height: 16),
-
-                _buildFieldLabel('Berat Badan (kg)'),
-                _buildTextField(_beratController, 'Masukkan berat badan'),
-                const SizedBox(height: 16),
-
-                _buildFieldLabel('Tinggi Badan (cm)'),
-                _buildTextField(_tinggiController, 'Masukkan tinggi badan'),
-                const SizedBox(height: 24),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _showCancelConfirmation,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: const Text('Batal', style: TextStyle(color: Colors.white)),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _submitPrediksi,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF5D78FD),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : Text(
-                                isEditMode ? 'Update' : 'Prediksi',
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                      ),
-                    ),
-                  ],
-                )
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

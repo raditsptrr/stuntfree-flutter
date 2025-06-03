@@ -26,10 +26,14 @@ class _PaketGiziPageState extends State<PaketGiziPage> {
     return Scaffold(
       backgroundColor: primaryColor.withOpacity(0.05),
       appBar: AppBar(
-        title: const Text("Paket Gizi"),
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: IconThemeData(color: primaryColor), // warna ikon back
+        title: Text(
+          'Paket Gizi',
+          style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
       ),
       body: FutureBuilder<List<PaketGizi>>(
         future: _futurePaket,
@@ -97,31 +101,37 @@ class _PaketGiziPageState extends State<PaketGiziPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: () async {
-                        final Uri uri = Uri.parse(paket.urlmaps);
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Tidak dapat membuka Maps")),
-                          );
-                        }
-                      },
-                      child: Row(
-                        children: [
-                          Icon(Icons.map, color: primaryColor),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Lihat di Maps',
-                            style: TextStyle(
-                              color: primaryColor,
-                              fontWeight: FontWeight.w600,
-                              decoration: TextDecoration.underline,
-                            ),
+                    const SizedBox(height: 12),
+                    // Tombol maps dengan border rounded
+                    SizedBox(
+                      height: 36,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          final Uri uri = Uri.parse(paket.urlmaps);
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Tidak dapat membuka Maps")),
+                            );
+                          }
+                        },
+                        icon: Icon(Icons.map, color: primaryColor),
+                        label: Text(
+                          'Lihat di Maps',
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontWeight: FontWeight.w600,
                           ),
-                        ],
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: primaryColor),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          backgroundColor: Colors.transparent,
+                        ),
                       ),
                     ),
                   ],

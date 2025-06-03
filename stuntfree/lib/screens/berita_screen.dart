@@ -48,6 +48,7 @@ class _BeritaScreenState extends State<BeritaScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -59,16 +60,7 @@ class _BeritaScreenState extends State<BeritaScreen> {
             letterSpacing: 1.2,
           ),
         ),
-        leading: const Padding(
-          padding: EdgeInsets.only(left: 16),
-          child: Icon(Icons.article_outlined, color: Color(0xFF5D78FD)),
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.menu, color: Color(0xFF5D78FD)),
-          ),
-        ],
+        
       ),
       body: Container(
         decoration: const BoxDecoration(

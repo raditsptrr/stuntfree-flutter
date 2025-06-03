@@ -15,11 +15,16 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // _anakFuture tidak lagi digunakan secara langsung untuk list,
+  // namun _loadAnakDiterima yang mengisi _allAnak dan _filteredAnak
+  // Jika _anakFuture benar-benar tidak ada kegunaan lain, bisa dipertimbangkan untuk dihapus
+  // Untuk saat ini, saya biarkan sesuai kode yang Anda berikan.
   late Future<List<Map<String, dynamic>>> _anakFuture;
   late Future<List<Edukasi>> _beritaFuture;
   List<Map<String, dynamic>> _allAnak = [];
   List<Map<String, dynamic>> _filteredAnak = [];
-  bool _loading = true;
+  bool _loading = true; // Digunakan untuk state loading awal daftar anak
+  String? _anakListError; // Untuk menangani error saat fetch data anak
   final TextEditingController _searchController = TextEditingController();
 
   Future<String?> getNamaOrtu() async {
@@ -30,44 +35,64 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _anakFuture = _fetchAnakDiterima();
+    _anakFuture = _fetchAnakDiterima(); // Tetap ada sesuai kode Anda
     _beritaFuture = ApiService().fetchEdukasi();
     _loadAnakDiterima();
     _searchController.addListener(_onSearchChanged);
   }
 
-  // load
   Future<void> _loadAnakDiterima() async {
-    final prefs = await SharedPreferences.getInstance();
-    final idOrtu = prefs.getInt('id_orangtua');
-    if (idOrtu == null) {
+    setState(() {
+      _loading = true;
+      _anakListError = null;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final idOrtu = prefs.getInt('id_orangtua');
+      if (idOrtu == null) {
+        setState(() {
+          _allAnak = [];
+          _filteredAnak = [];
+          _loading = false;
+          // _anakListError = 'ID Orang tua tidak ditemukan.'; // Opsi jika ingin pesan error spesifik
+        });
+        return;
+      }
+      final data = await ApiService().fetchAnak(idOrtu);
+      final anakDiterima = data
+          .where((anak) => anak['status'].toString().toLowerCase() == 'diterima')
+          .toList();
       setState(() {
-        _allAnak = [];
-        _filteredAnak = [];
+        _allAnak = anakDiterima;
+        _filteredAnak = anakDiterima;
         _loading = false;
       });
-      return;
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _anakListError = 'Gagal memuat data anak. Periksa koneksi Anda.';
+        _allAnak = [];
+        _filteredAnak = [];
+      });
     }
-    final data = await ApiService().fetchAnak(idOrtu);
-    final anakDiterima = data.where((anak) => anak['status'].toString().toLowerCase() == 'diterima').toList();
-    setState(() {
-      _allAnak = anakDiterima;
-      _filteredAnak = anakDiterima;
-      _loading = false;
-    });
   }
 
-  // search 
   void _onSearchChanged() {
     final keyword = _searchController.text.toLowerCase();
     setState(() {
-      _filteredAnak = _allAnak.where((anak) {
-        final nama = (anak['nama'] ?? '').toString().toLowerCase();
-        return nama.contains(keyword);
-      }).toList();
+      if (keyword.isEmpty) {
+        _filteredAnak = _allAnak;
+      } else {
+        _filteredAnak = _allAnak.where((anak) {
+          final nama = (anak['nama'] ?? '').toString().toLowerCase();
+          return nama.contains(keyword);
+        }).toList();
+      }
     });
   }
 
+  // _fetchAnakDiterima() tetap ada, karena _anakFuture di initState menggunakannya.
+  // Jika _anakFuture dihapus, method ini juga bisa dihapus.
   Future<List<Map<String, dynamic>>> _fetchAnakDiterima() async {
     final prefs = await SharedPreferences.getInstance();
     final idOrtu = prefs.getInt('id_orangtua');
@@ -80,8 +105,74 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
+  }
+
+  Widget _buildAnakListWidget() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_anakListError != null) {
+      return Center(
+          child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(_anakListError!,
+                  style: const TextStyle(color: Colors.red, fontSize: 14),
+                  textAlign: TextAlign.center)));
+    }
+    if (_allAnak.isEmpty) {
+      return const Center(
+          child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text('Belum ada data anak yang diterima.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  textAlign: TextAlign.center)));
+    }
+    if (_filteredAnak.isEmpty) {
+      return const Center(
+          child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text('Tidak ada anak yang sesuai pencarian.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  textAlign: TextAlign.center)));
+    }
+
+    return ListView.separated(
+      scrollDirection: Axis.horizontal,
+      itemCount: _filteredAnak.length,
+      separatorBuilder: (_, __) => const SizedBox(width: 8),
+      itemBuilder: (context, index) {
+        final anak = _filteredAnak[index];
+        final hasilModel = anak['hasil'] ?? 'Tidak Ada Data';
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChildDetailScreen(anakData: anak),
+              ),
+            );
+          },
+          child: InfoCard( // Menggunakan InfoCard yang sudah direvisi
+            name: anak['nama'] ?? '-',
+            gender: anak['jenis_kelamin'] == 1
+                ? 'Laki-laki'
+                : anak['jenis_kelamin'] == 0
+                    ? 'Perempuan'
+                    : '-',
+            weight: anak['berat']?.round() ?? 0,
+            age: anak['usia_bulan']?.round() ?? 0,
+            height: anak['tinggi']?.round() ?? 0,
+            score: double.tryParse(anak['z_score']?.toString() ?? '0') ?? 0.0,
+            color: const Color(0xFF5D78FD),
+            modelResult: hasilModel,
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -104,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header (Tetap Sama)
+                    // Header
                     Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 16),
@@ -140,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   future: getNamaOrtu(),
                                   builder: (context, snapshot) {
                                     final namaOrtu =
-                                        snapshot.data ?? 'Nama Tidak Tersedia';
+                                        snapshot.data ?? 'Pengguna';
                                     return ShaderMask(
                                       shaderCallback: (Rect bounds) {
                                         return const LinearGradient(
@@ -175,18 +266,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
 
-                    // Search bar (Tetap Sama)
+                    // Search bar
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: TextField(
                         controller: _searchController,
                         decoration: InputDecoration(
-                          hintText: 'Search',
-                          prefixIcon: Icon(Icons.search),
+                          hintText: 'Cari nama anak...',
+                          prefixIcon: const Icon(Icons.search),
+                           suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _searchController.clear();
+                                },
+                              )
+                            : null,
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding: EdgeInsets.symmetric(vertical: 0),
-                          border: OutlineInputBorder(
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 0),
+                          border: const OutlineInputBorder(
                             borderRadius:
                                 BorderRadius.all(Radius.circular(30)),
                             borderSide: BorderSide.none,
@@ -197,57 +297,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 16),
 
-                    // 
-
-                    // Info Card List (Tetap Sama)
+                    // Info Card List
                     Padding(
                       padding: const EdgeInsets.only(left: 16),
                       child: SizedBox(
                         height: 155,
-                        child: _loading
-                            ? const Center(child: CircularProgressIndicator())
-                            : _filteredAnak.isEmpty
-                                ? const Center(child: Text('Tidak ada anak yang sesuai pencarian'))
-                                : ListView.separated(
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: _filteredAnak.length,
-                                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                                    itemBuilder: (context, index) {
-                                      final anak = _filteredAnak[index];
-                                      final hasilModel = anak['hasil'] ?? 'Tidak Ada Data';
-
-                                      return GestureDetector(
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => ChildDetailScreen(anakData: anak),
-                                            ),
-                                          );
-                                        },
-                                        child: InfoCard(
-                                          name: anak['nama'] ?? '-',
-                                          gender: anak['jenis_kelamin'] == 1
-                                              ? 'Laki-laki'
-                                              : anak['jenis_kelamin'] == 0
-                                                  ? 'Perempuan'
-                                                  : '-',
-                                          weight: anak['berat']?.round() ?? 0,
-                                          age: anak['usia_bulan']?.round() ?? 0,
-                                          height: anak['tinggi']?.round() ?? 0,
-                                          score: double.tryParse(anak['z_score']?.toString() ?? '0') ?? 0.0,
-                                          color: const Color(0xFF5D78FD),
-                                          modelResult: hasilModel,
-                                        ),
-                                      );
-                                    },
-                                  ),
+                        child: _buildAnakListWidget(),
                       ),
                     ),
 
                     const SizedBox(height: 20),
 
-                    // Teman Sehat Anak (Tetap Sama)
+                    // Teman Sehat Anak
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Text("Teman Sehat Anak",
@@ -264,13 +325,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               onTap: () {
                                 Navigator.pushNamed(context, '/faskes');
                               },
-                            
-                            child: CategoryCard(
-                              title: 'Fasilitas Kesehatan',
-                              icon: Icons.child_care,
-                              color: Colors.red,
+                              child: const CategoryCard(
+                                title: 'Fasilitas Kesehatan',
+                                icon: Icons.local_hospital_outlined, // Mengganti ikon
+                                color: Colors.redAccent, // Sedikit variasi warna
+                              ),
                             ),
-                           ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
@@ -280,7 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                               child: const CategoryCard(
                                 title: 'Paket Gizi',
-                                icon: Icons.restaurant,
+                                icon: Icons.restaurant_menu_outlined, // Mengganti ikon
                                 color: Color(0xFF5D78FD),
                               ),
                             ),
@@ -289,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    // Terbaru (Tetap Sama)
+                    // Terbaru
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Text("Terbaru",
@@ -319,10 +379,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             final latestBerita = allBerita.take(3).toList();
                             return Column(
                               children: latestBerita.map((berita) {
-                                // Gunakan NetworkNewsCard yang sudah direvisi
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 12.0),
-                                  child: NetworkNewsCard( // <-- Pastikan ini memanggil NetworkNewsCard yang baru
+                                  child: NetworkNewsCard(
                                     title: berita.judul,
                                     date: berita.kategori,
                                     description: berita.content,
@@ -359,7 +418,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // BottomNavBar (Tetap Sama)
+          // BottomNavBar
           Align(
             alignment: Alignment.bottomCenter,
             child: BottomNavBar(
@@ -378,7 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// InfoCard (Tetap Sama)
+// InfoCard (REVISED FOR OVERFLOW PREVENTION)
 class InfoCard extends StatelessWidget {
   final String name;
   final String gender;
@@ -422,15 +481,25 @@ class InfoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(name.toUpperCase(),
-              style: const TextStyle(
-                  color: Color.fromARGB(255, 255, 224, 98),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold)),
+          Text(
+            name.toUpperCase(),
+            maxLines: 1, // Ditambahkan
+            overflow: TextOverflow.ellipsis, // Ditambahkan
+            style: const TextStyle(
+                color: Color.fromARGB(255, 255, 224, 98),
+                fontSize: 14,
+                fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 2),
           Row(
             children: [
-              const Icon(Icons.male, color: Colors.white, size: 14),
+              // Menggunakan Icon yang lebih generik jika jenis kelamin belum pasti ikonnya
+              Icon(
+                gender.toLowerCase() == 'laki-laki' ? Icons.male : 
+                gender.toLowerCase() == 'perempuan' ? Icons.female : Icons.person_outline, 
+                color: Colors.white, 
+                size: 14
+              ),
               const SizedBox(width: 4),
               Text(gender,
                   style: const TextStyle(color: Colors.white, fontSize: 12)),
@@ -439,7 +508,7 @@ class InfoCard extends StatelessWidget {
           const SizedBox(height: 2),
           Row(
             children: [
-              const Icon(Icons.monitor_weight, color: Colors.white, size: 14),
+              const Icon(Icons.monitor_weight_outlined, color: Colors.white, size: 14), // Menggunakan outlined icon
               const SizedBox(width: 4),
               Text("$weight Kg",
                   style: const TextStyle(color: Colors.white, fontSize: 12)),
@@ -448,16 +517,19 @@ class InfoCard extends StatelessWidget {
           const SizedBox(height: 2),
           Row(
             children: [
-              const Icon(Icons.calendar_today, color: Colors.white, size: 14),
+              const Icon(Icons.calendar_today_outlined, color: Colors.white, size: 14), // Menggunakan outlined icon
               const SizedBox(width: 4),
-              Text("$age Bulan • $height cm",
+              Text("$age Bln • $height cm", // Singkatan "Bulan"
                   style: const TextStyle(color: Colors.white, fontSize: 12)),
             ],
           ),
           const Spacer(),
-          if (modelResult != null) ...[
+          // Tampilkan bagian prediksi hanya jika modelResult valid dan bukan placeholder
+          if (modelResult != null && modelResult != 'Tidak Ada Data' && modelResult!.isNotEmpty) ...[
             Text(
               'Prediksi: $modelResult',
+              maxLines: 1, // Ditambahkan
+              overflow: TextOverflow.ellipsis, // Ditambahkan
               style: const TextStyle(
                 color: Color.fromARGB(255, 255, 224, 98),
                 fontSize: 12,
@@ -472,7 +544,7 @@ class InfoCard extends StatelessWidget {
               score.toStringAsFixed(2),
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: 20, // Ukuran font skor bisa dipertimbangkan jika masih overflow
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -483,7 +555,7 @@ class InfoCard extends StatelessWidget {
   }
 }
 
-// CategoryCard (Tetap Sama)
+// CategoryCard (Tetap Sama, mungkin dengan sedikit penyesuaian ikon/style jika diinginkan)
 class CategoryCard extends StatelessWidget {
   final String title;
   final IconData icon;
@@ -499,6 +571,7 @@ class CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 100,
+      padding: const EdgeInsets.all(8), // Padding agar konten tidak terlalu mepet
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [color.withOpacity(0.8), color],
@@ -518,11 +591,14 @@ class CategoryCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 38, color: Colors.white),
+            Icon(icon, size: 36, color: Colors.white), // Ukuran ikon mungkin bisa disesuaikan
             const SizedBox(height: 8),
-            Text(title,
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold)),
+            Text(
+              title,
+              textAlign: TextAlign.center, // Untuk judul yang mungkin panjang
+              style: const TextStyle(
+                  color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold), // Ukuran font mungkin bisa disesuaikan
+            ),
           ],
         ),
       ),
@@ -532,6 +608,7 @@ class CategoryCard extends StatelessWidget {
 
 
 // NetworkNewsCard (REVISI - Menggunakan Container + Padding)
+// (Kode NetworkNewsCard Anda sebelumnya sudah baik, saya salin kembali)
 class NetworkNewsCard extends StatelessWidget {
   final String title;
   final String date;
@@ -562,23 +639,23 @@ class NetworkNewsCard extends StatelessWidget {
           )
         ],
       ),
-      child: Material( // Untuk efek InkWell dan clipping
+      child: Material( 
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: onTap,
-          child: Padding( // <-- Tambahkan Padding di sini
-            padding: const EdgeInsets.all(12.0), // Padding 12 di semua sisi
+          child: Padding( 
+            padding: const EdgeInsets.all(12.0), 
             child: Row(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0), // Sudut tumpul semua sisi
+                  borderRadius: BorderRadius.circular(12.0), 
                   child: Container(
-                    width: 80, // Ukuran gambar 80x80
+                    width: 80, 
                     height: 80,
                     decoration: const BoxDecoration(
-                      color: Colors.grey,
+                      color: Colors.grey, // Placeholder jika tidak ada gambar
                     ),
                     child: imageUrl != null && imageUrl!.isNotEmpty
                         ? Image.network(
@@ -586,7 +663,7 @@ class NetworkNewsCard extends StatelessWidget {
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return const Icon(Icons.broken_image,
-                                  size: 40, color: Colors.white); // Perkecil ikon
+                                  size: 40, color: Colors.white70); 
                             },
                             loadingBuilder: (context, child, loadingProgress) {
                               if (loadingProgress == null) return child;
@@ -594,10 +671,10 @@ class NetworkNewsCard extends StatelessWidget {
                                   child: CircularProgressIndicator(strokeWidth: 2));
                             },
                           )
-                        : const Icon(Icons.image, size: 40, color: Colors.white), // Perkecil ikon
+                        : const Icon(Icons.image_outlined, size: 40, color: Colors.white70), 
                   ),
                 ),
-                const SizedBox(width: 12), // Jarak antara gambar dan teks
+                const SizedBox(width: 12), 
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

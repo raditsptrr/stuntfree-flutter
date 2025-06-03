@@ -56,6 +56,8 @@ class _DataAnakPageState extends State<DataAnakPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F9FF),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -254,7 +256,7 @@ class _DataAnakPageState extends State<DataAnakPage> {
                 size: 20,
               ),
               label: Text(
-                hasPrediction ? 'Edit' : 'Prediksi',
+                hasPrediction ? 'Prediksi Update' : 'Prediksi',
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),

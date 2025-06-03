@@ -41,10 +41,14 @@ class _FaskesPageState extends State<FaskesPage> {
     return Scaffold(
       backgroundColor: primaryColor.withOpacity(0.05),
       appBar: AppBar(
-        title: const Text("Fasilitas Kesehatan"),
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: IconThemeData(color: primaryColor),
+        title: Text(
+          "Fasilitas Kesehatan",
+          style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
       ),
       body: Column(
         children: [
@@ -53,36 +57,49 @@ class _FaskesPageState extends State<FaskesPage> {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: CircularProgressIndicator(),
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
                 );
               }
               if (snapshot.hasError) {
-                return Text('Gagal memuat kecamatan: ${snapshot.error}');
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Gagal memuat kecamatan: ${snapshot.error}',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                );
               }
 
               final kecamatanList = snapshot.data!;
               return Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: DropdownButtonFormField<int>(
                   value: _selectedKecamatanId,
                   isExpanded: true,
                   hint: const Text("Pilih Kecamatan"),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
                   items: [
                     const DropdownMenuItem(
                       value: null,
                       child: Text("Semua Kecamatan"),
                     ),
-                    ...kecamatanList.map((kec) => DropdownMenuItem(
-                          value: kec.id,
-                          child: Text(kec.nama),
-                        ))
+                    ...kecamatanList.map(
+                      (kec) => DropdownMenuItem(
+                        value: kec.id,
+                        child: Text(kec.nama),
+                      ),
+                    ),
                   ],
                   onChanged: _onKecamatanChanged,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
                 ),
               );
             },
@@ -108,76 +125,81 @@ class _FaskesPageState extends State<FaskesPage> {
                   return const Center(child: Text("Tidak ada data faskes."));
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                return ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   itemCount: items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final faskes = items[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: primaryColor.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            faskes.nama,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: primaryColor,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(faskes.alamat),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Icon(Icons.phone, size: 16, color: primaryColor),
-                              const SizedBox(width: 4),
-                              Text(faskes.telepon),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          GestureDetector(
-                            onTap: () async {
-                              final Uri uri = Uri.parse(faskes.urlMaps);
-                              if (await canLaunchUrl(uri)) {
-                                await launchUrl(uri, mode: LaunchMode.externalApplication);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Tidak dapat membuka Maps")),
-                                );
-                              }
-                            },
-                            child: Row(
-                              children: [
-                                Icon(Icons.map, color: primaryColor),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Lihat di Maps',
-                                  style: TextStyle(
-                                    color: primaryColor,
-                                    fontWeight: FontWeight.w600,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
+                    return Card(
+  color: Colors.white, // Warna putih polos
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(16),
+  ),
+  elevation: 3,
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          faskes.nama,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: primaryColor, // Tetap pakai warna utama untuk teks judul
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          faskes.alamat,
+          style: const TextStyle(fontSize: 14, color: Colors.black87),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Icon(Icons.phone, size: 16, color: primaryColor),
+            const SizedBox(width: 6),
+            Text(
+              faskes.telepon,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: () async {
+            final Uri uri = Uri.parse(faskes.urlMaps);
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Tidak dapat membuka Maps")),
+              );
+            }
+          },
+          icon: Icon(Icons.map, color: primaryColor),
+          label: Text(
+            'Lihat di Maps',
+            style: TextStyle(
+              color: primaryColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: primaryColor),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            backgroundColor: Colors.transparent,
+          ),
+        ),
+      ],
+    ),
+  ),
+);
+
                   },
                 );
               },

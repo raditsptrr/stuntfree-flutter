@@ -112,7 +112,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 10),
                           const Text(
-                            'Sobat Jalu silakan masuk untuk melaporkan',
+                            'Sobat StuntFree, silakan masuk untuk mulai memantau dan memprediksi status gizi anak!',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey,

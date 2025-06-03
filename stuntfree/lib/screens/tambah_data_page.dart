@@ -119,7 +119,10 @@ class _TambahDataAnakPageState extends State<TambahDataAnakPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Validasi Data'),
-        content: const Text('Apakah data anak sudah sesuai?'),
+        content: const Text(
+          'Apakah data anak sudah sesuai? \n\n'
+          'Catatan: Setelah disimpan, data anak tidak akan langsung tampil. '
+          'Data perlu diverifikasi terlebih dahulu oleh admin.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

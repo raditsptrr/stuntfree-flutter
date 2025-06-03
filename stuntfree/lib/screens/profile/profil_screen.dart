@@ -39,6 +39,7 @@ class _ProfilPageState extends State<ProfilPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F9FF),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -51,19 +52,7 @@ class _ProfilPageState extends State<ProfilPage> {
             letterSpacing: 1,
           ),
         ),
-        leading: const Padding(
-          padding: EdgeInsets.only(left: 12),
-          child: CircleAvatar(
-            backgroundColor: Color(0xFFE3F0FF),
-            child: Icon(Icons.person, color: Color(0xFF5D78FD)),
-          ),
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.menu, color: Color(0xFF5D78FD)),
-          ),
-        ],
+        
       ),
       body: Column(
         children: [
